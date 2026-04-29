@@ -47,7 +47,7 @@ class InstallViewModelTest {
     }
 
     @Test
-    fun `loadAabs populates state with files`() = runTest {
+    fun `loadAabs populates state with files`() = runTest(mainDispatcherRule.dispatcher) {
         coEvery { client.listAabs() } returns listOf("app-release.aab", "app-debug.aab")
 
         vm.state.test {
@@ -62,7 +62,7 @@ class InstallViewModelTest {
     }
 
     @Test
-    fun `loadAabs reports error when listing fails`() = runTest {
+    fun `loadAabs reports error when listing fails`() = runTest(mainDispatcherRule.dispatcher) {
         coEvery { client.listAabs() } throws IOException("connection refused")
 
         vm.state.test {
@@ -76,7 +76,7 @@ class InstallViewModelTest {
     }
 
     @Test
-    fun `install streams log lines and clears installing on exit`() = runTest {
+    fun `install streams log lines and clears installing on exit`() = runTest(mainDispatcherRule.dispatcher) {
         every { client.executeStreaming(any()) } returns flowOf(
             LogLine.Stdout("starting"),
             LogLine.Stdout("done"),
@@ -96,7 +96,7 @@ class InstallViewModelTest {
     }
 
     @Test
-    fun `install propagates flow errors into state`() = runTest {
+    fun `install propagates flow errors into state`() = runTest(mainDispatcherRule.dispatcher) {
         every { client.executeStreaming(any()) } returns flow { throw IOException("ssh closed") }
 
         vm.state.test {

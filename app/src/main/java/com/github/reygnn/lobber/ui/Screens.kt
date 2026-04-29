@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.reygnn.lobber.ssh.LogLine
@@ -217,4 +218,111 @@ private fun InstallProgress(aab: String, log: List<LogLine>) {
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OnboardingScreen(
+    viewModel: OnboardingViewModel,
+    onDone: () -> Unit,
+    onManual: () -> Unit,
+) {
+    val s by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(s.step) {
+        if (s.step == OnboardingStep.Done) {
+            viewModel.consumeDone()
+            onDone()
+        }
+    }
+
+    val running = s.step != OnboardingStep.Idle && s.step != OnboardingStep.Done
+
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Erst-Setup") })
+    }) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                "Lobber erzeugt einen Schlüssel auf dem Phone und legt den Pubkey " +
+                    "auf dem Build-Host ab. Dafür brauchst du einmalig User & Passwort.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+
+            OutlinedTextField(
+                value = s.host, onValueChange = viewModel::onHost,
+                label = { Text("Host") }, singleLine = true, enabled = !running,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = s.port, onValueChange = viewModel::onPort,
+                label = { Text("Port") }, singleLine = true, enabled = !running,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = s.username, onValueChange = viewModel::onUsername,
+                label = { Text("User") }, singleLine = true, enabled = !running,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = s.password, onValueChange = viewModel::onPassword,
+                label = { Text("Passwort (nur einmalig)") }, singleLine = true, enabled = !running,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = s.workingDir, onValueChange = viewModel::onWorkingDir,
+                label = { Text("Working dir (mit install-aab.sh)") }, singleLine = true, enabled = !running,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            s.error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
+
+            if (running) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.height(20.dp))
+                    Spacer(Modifier.height(0.dp))
+                    Text(
+                        text = "  " + stepLabel(s.step),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+
+            Button(
+                onClick = viewModel::start,
+                enabled = !running,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (running) "Läuft …" else "Auto-Setup starten")
+            }
+
+            TextButton(
+                onClick = onManual,
+                enabled = !running,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Ich habe schon einen Schlüssel")
+            }
+        }
+    }
+}
+
+private fun stepLabel(step: OnboardingStep): String = when (step) {
+    OnboardingStep.Idle           -> ""
+    OnboardingStep.GeneratingKey  -> "Erzeuge Ed25519-Schlüssel …"
+    OnboardingStep.PushingKey     -> "Lege Pubkey auf dem Build-Host ab …"
+    OnboardingStep.Verifying      -> "Verifiziere Pubkey-Login …"
+    OnboardingStep.Saving         -> "Speichere Konfiguration …"
+    OnboardingStep.Done           -> "Fertig"
 }

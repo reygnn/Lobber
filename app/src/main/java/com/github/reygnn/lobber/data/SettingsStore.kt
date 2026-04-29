@@ -22,6 +22,7 @@ private val Context.dataStore by preferencesDataStore(name = "lobber-settings")
 class SettingsStore(private val context: Context) {
 
     private val keyFile = File(context.filesDir, "id_ed25519")
+    private val pubKeyFile = File(context.filesDir, "id_ed25519.pub")
 
     /** Emits true once a valid config (incl. key file) is on disk. */
     val isConfigured: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -66,6 +67,11 @@ class SettingsStore(private val context: Context) {
             prefs[KEY_USER] = username
             prefs[KEY_DIR] = workingDir
         }
+    }
+
+    /** Schreibt die `ssh-ed25519 …`-Zeile als `id_ed25519.pub` in `filesDir`. */
+    suspend fun savePubKey(publicKeyOpenSsh: String) {
+        pubKeyFile.writeText(publicKeyOpenSsh)
     }
 
     private companion object {

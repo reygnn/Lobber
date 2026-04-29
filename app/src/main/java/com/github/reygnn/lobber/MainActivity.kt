@@ -24,6 +24,8 @@ import androidx.navigation.compose.rememberNavController
 import com.github.reygnn.lobber.data.SettingsStore
 import com.github.reygnn.lobber.ui.InstallViewModel
 import com.github.reygnn.lobber.ui.InstallerScreen
+import com.github.reygnn.lobber.ui.OnboardingScreen
+import com.github.reygnn.lobber.ui.OnboardingViewModel
 import com.github.reygnn.lobber.ui.SettingsScreen
 import com.github.reygnn.lobber.ui.SettingsViewModel
 
@@ -47,6 +49,7 @@ private fun LobberApp(store: SettingsStore) {
     val factory = remember(store) { LobberViewModelFactory(store) }
     val settingsVm: SettingsViewModel = viewModel(factory = factory)
     val installVm: InstallViewModel = viewModel(factory = factory)
+    val onboardingVm: OnboardingViewModel = viewModel(factory = factory)
 
     val configured by settingsVm.isConfigured.collectAsStateWithLifecycle()
     val nav = rememberNavController()
@@ -55,8 +58,8 @@ private fun LobberApp(store: SettingsStore) {
         composable("loading") {
             LaunchedEffect(configured) {
                 when (configured) {
-                    true  -> nav.navigate("installer") { popUpTo("loading") { inclusive = true } }
-                    false -> nav.navigate("settings")  { popUpTo("loading") { inclusive = true } }
+                    true  -> nav.navigate("installer")  { popUpTo("loading") { inclusive = true } }
+                    false -> nav.navigate("onboarding") { popUpTo("loading") { inclusive = true } }
                     null  -> Unit // still resolving
                 }
             }
@@ -64,13 +67,22 @@ private fun LobberApp(store: SettingsStore) {
                 CircularProgressIndicator()
             }
         }
+        composable("onboarding") {
+            OnboardingScreen(
+                viewModel = onboardingVm,
+                onDone = {
+                    nav.navigate("installer") { popUpTo("onboarding") { inclusive = true } }
+                },
+                onManual = { nav.navigate("settings") },
+            )
+        }
         composable("settings") {
             SettingsScreen(
                 viewModel = settingsVm,
                 onSaved = {
                     nav.navigate("installer") { popUpTo("settings") { inclusive = true } }
                 },
-                onBack = if (configured == true) ({ nav.popBackStack() }) else null,
+                onBack = { nav.popBackStack() },
             )
         }
         composable("installer") {
@@ -87,8 +99,9 @@ private class LobberViewModelFactory(
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = when (modelClass) {
-        SettingsViewModel::class.java -> SettingsViewModel(store) as T
-        InstallViewModel::class.java  -> InstallViewModel(store) as T
+        SettingsViewModel::class.java   -> SettingsViewModel(store) as T
+        InstallViewModel::class.java    -> InstallViewModel(store) as T
+        OnboardingViewModel::class.java -> OnboardingViewModel(store) as T
         else -> error("Unknown ViewModel: ${modelClass.name}")
     }
 }
