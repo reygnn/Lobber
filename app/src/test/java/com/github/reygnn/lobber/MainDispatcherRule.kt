@@ -1,4 +1,4 @@
-package com.github.reygnn.thrust
+package com.github.reygnn.lobber
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

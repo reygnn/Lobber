@@ -1,6 +1,7 @@
 package com.github.reygnn.lobber.ui
 
 import app.cash.turbine.test
+import com.github.reygnn.lobber.MainDispatcherRule
 import com.github.reygnn.lobber.data.SettingsStore
 import com.github.reygnn.lobber.ssh.LogLine
 import com.github.reygnn.lobber.ssh.SshClient
