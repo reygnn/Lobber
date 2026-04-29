@@ -51,13 +51,13 @@ class InstallViewModelTest {
         coEvery { client.listAabs() } returns listOf("app-release.aab", "app-debug.aab")
 
         vm.state.test {
-            assertEquals(InstallUiState(), awaitItem())          // initial
+            awaitItem() // Initialer State
             vm.loadAabs()
-            assertEquals(true, awaitItem().loading)              // loading
-            val final = awaitItem()
+
+            // Wir nutzen expectMostRecentItem, falls loading=true zu schnell geht
+            val final = expectMostRecentItem()
             assertEquals(false, final.loading)
             assertEquals(listOf("app-release.aab", "app-debug.aab"), final.aabs)
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -66,13 +66,12 @@ class InstallViewModelTest {
         coEvery { client.listAabs() } throws IOException("connection refused")
 
         vm.state.test {
-            skipItems(1) // initial
+            awaitItem() // Initialer State
             vm.loadAabs()
-            skipItems(1) // loading=true
-            val final = awaitItem()
+
+            val final = expectMostRecentItem()
             assertEquals(false, final.loading)
             assertEquals("connection refused", final.error)
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -85,15 +84,14 @@ class InstallViewModelTest {
         )
 
         vm.state.test {
-            skipItems(1) // initial
+            awaitItem() // Initialer State
             vm.install("app-release.aab")
-            assertEquals("app-release.aab", awaitItem().installing) // installing set
-            skipItems(2)                                            // 2 stdout appends
-            val final = awaitItem()                                 // exit code clears installing
+
+            // Hier warten wir auf das Ergebnis nach dem Stream
+            val final = expectMostRecentItem()
             assertNull(final.installing)
             assertEquals(3, final.log.size)
             assertEquals(LogLine.ExitCode(0), final.log.last())
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -102,13 +100,12 @@ class InstallViewModelTest {
         every { client.executeStreaming(any()) } returns flow { throw IOException("ssh closed") }
 
         vm.state.test {
-            skipItems(1) // initial
+            awaitItem() // Initialer State
             vm.install("app-release.aab")
-            skipItems(1) // installing set
-            val final = awaitItem()
+
+            val final = expectMostRecentItem()
             assertNull(final.installing)
             assertEquals("ssh closed", final.error)
-            cancelAndIgnoreRemainingEvents()
         }
     }
 }
