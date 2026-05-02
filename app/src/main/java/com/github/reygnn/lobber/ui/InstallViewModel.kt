@@ -7,6 +7,7 @@ import com.github.reygnn.lobber.ssh.LogLine
 import com.github.reygnn.lobber.ssh.SshClient
 import com.github.reygnn.lobber.ssh.SshConfig
 import com.github.reygnn.lobber.ssh.SshjClient
+import com.github.reygnn.lobber.ssh.shellQuote
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -63,7 +64,7 @@ class InstallViewModel(
                 it.copy(installing = aab, log = emptyList(), lastExitCode = null, error = null)
             }
             createClient(config)
-                .executeStreaming("$script ${shellQuoteArg(aab)}")
+                .executeStreaming("$script ${shellQuote(aab)}")
                 .catch { e ->
                     _state.update {
                         it.copy(installing = null, error = e.message ?: "Fehler")
@@ -85,6 +86,3 @@ class InstallViewModel(
         _state.update { it.copy(error = null) }
     }
 }
-
-private fun shellQuoteArg(s: String): String =
-    "'" + s.replace("'", "'\\''") + "'"
