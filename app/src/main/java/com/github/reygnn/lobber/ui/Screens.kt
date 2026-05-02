@@ -183,10 +183,14 @@ private fun AabList(
                         modifier = Modifier.fillMaxWidth().padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text = "${entry.name}  ·  ${formatAabDate(entry.mtimeEpochSeconds)}",
-                            modifier = Modifier.weight(1f),
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(entry.name)
+                            Text(
+                                text = formatAabDate(entry.mtimeEpochSeconds),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                         Button(onClick = { onInstall(entry.name) }) { Text("Install") }
                     }
                 }
