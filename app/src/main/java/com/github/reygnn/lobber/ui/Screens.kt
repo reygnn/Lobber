@@ -121,7 +121,7 @@ fun SettingsScreen(
             )
 
             s.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+                Text(it.resolve(), color = MaterialTheme.colorScheme.error)
             }
 
             Button(
@@ -235,12 +235,12 @@ private fun AdbStatusDot() {
 @Composable
 private fun AabList(
     aabs: List<AabEntry>,
-    error: String?,
+    error: UiText?,
     onInstall: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error)
+            Text(it.resolve(), color = MaterialTheme.colorScheme.error)
             Spacer(Modifier.height(8.dp))
         }
         if (aabs.isEmpty() && error == null) {
@@ -382,7 +382,7 @@ fun OnboardingScreen(
             )
 
             s.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+                Text(it.resolve(), color = MaterialTheme.colorScheme.error)
             }
 
             if (running) {

@@ -2,6 +2,7 @@ package com.github.reygnn.lobber.ui
 
 import app.cash.turbine.test
 import com.github.reygnn.lobber.MainDispatcherRule
+import com.github.reygnn.lobber.R
 import com.github.reygnn.lobber.data.SettingsStore
 import com.github.reygnn.lobber.ssh.SshBootstrap
 import com.github.reygnn.lobber.ssh.SshConfig
@@ -93,7 +94,7 @@ class OnboardingViewModelTest {
         vm.state.test {
             val final = expectMostRecentItem()
             assertEquals(OnboardingStep.Idle, final.step)
-            assertEquals("IOException: auth failed", final.error)
+            assertEquals(UiText.Literal("IOException: auth failed"), final.error)
         }
     }
 
@@ -105,7 +106,7 @@ class OnboardingViewModelTest {
         vm.state.test {
             val final = expectMostRecentItem()
             assertEquals(OnboardingStep.Idle, final.step)
-            assertEquals("IOException: verification failed", final.error)
+            assertEquals(UiText.Literal("IOException: verification failed"), final.error)
         }
     }
 
@@ -119,9 +120,11 @@ class OnboardingViewModelTest {
         vm.state.test {
             val final = expectMostRecentItem()
             assertEquals(
-                "IOException: Read OpenSSH Version 1 Key failed\n" +
-                    "→ GeneralSecurityException: KeyFactory failed\n" +
-                    "→ IllegalStateException: Ed25519 not found",
+                UiText.Literal(
+                    "IOException: Read OpenSSH Version 1 Key failed\n" +
+                        "→ GeneralSecurityException: KeyFactory failed\n" +
+                        "→ IllegalStateException: Ed25519 not found"
+                ),
                 final.error,
             )
         }
@@ -132,7 +135,7 @@ class OnboardingViewModelTest {
         vm.start()
         vm.state.test {
             val final = expectMostRecentItem()
-            assertEquals("Alle Felder ausfüllen", final.error)
+            assertEquals(UiText.Resource(R.string.error_fill_all_fields), final.error)
             assertEquals(OnboardingStep.Idle, final.step)
         }
         coVerify(exactly = 0) { bootstrap.pushPublicKey(any(), any(), any(), any(), any()) }

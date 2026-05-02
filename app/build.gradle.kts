@@ -12,8 +12,8 @@ android {
         applicationId = "com.github.reygnn.lobber"
         minSdk = 36                 // Android 16 only
         targetSdk = 36
-        versionCode = 14
-        versionName = "0.2.14"
+        versionCode = 15
+        versionName = "0.2.15"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

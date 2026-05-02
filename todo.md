@@ -45,37 +45,6 @@ falls auf Android verfügbar).
 
 ---
 
-## UI / UX
-
-### Tastatur verdeckt Working-Dir-Feld
-
-Im Settings- und Onboarding-Screen verschwindet das `workingDir`-Eingabefeld
-unter der Software-Tastatur. Beide Screens haben zwar
-`Modifier.verticalScroll(rememberScrollState())` (`ui/Screens.kt:73,249`),
-aber die App zieht das IME-Inset nicht in den Layout-Pass — auf Android 15+
-ist Edge-to-Edge default und Tastatur überlagert dann statt zu resizen.
-
-Lösung in der Größenordnung einer Handvoll Zeilen:
-- `Modifier.imePadding()` auf den scrollbaren Column-Container setzen.
-- Optional `android:windowSoftInputMode="adjustResize"` auf die Activity in
-  `AndroidManifest.xml`, falls das alleine nicht reicht.
-- Beim Fokussieren des Felds idealerweise dorthin scrollen
-  (`bringIntoViewRequester` oder `Modifier.onFocusEvent`).
-
-### ViewModel-Fehlermeldungen lokalisieren
-
-`OnboardingViewModel`, `SettingsViewModel` und `InstallViewModel` setzen
-Fehlertexte hardcoded (z. B. `"Alle Felder ausfüllen"`, `"Fehler"`,
-`formatCauseChain`). Mit der Aufteilung auf `values/strings.xml` (en) und
-`values-de/strings.xml` (de) erscheinen UI-Composables jetzt in der richtigen
-Sprache, VM-emittierte Fehler aber weiterhin nur in der hardcoded Sprache.
-
-Lösung-Skizze: VM hält statt `String` einen sealed `UiText { Resource(id);
-Literal(s) }` o. Ä. im State; das Composable resolved über `stringResource()`.
-Alternativ Context-Injection via `AndroidViewModel.getApplication()`.
-
----
-
 ## Features
 
 ### Import / Export der Settings

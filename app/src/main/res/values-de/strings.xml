@@ -20,6 +20,11 @@
     <string name="self_install_body">%1$s sieht nach einem Lobber-Build aus. Beim Installieren wird der laufende Lobber-Prozess mitten im Stream gekillt — du siehst den Install-Log nicht zu Ende. Trotzdem fortfahren?</string>
     <string name="self_install_continue">Fortfahren</string>
 
+    <!-- ViewModel-emitted errors -->
+    <string name="error_fill_all_fields">Alle Felder ausfüllen</string>
+    <string name="error_unknown">Unbekannter Fehler</string>
+    <string name="error_no_message">(keine Nachricht)</string>
+
     <!-- Form fields -->
     <!-- field_host, field_port: identical to English -->
     <!-- field_user: identical -->

@@ -2,6 +2,7 @@ package com.github.reygnn.lobber.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.reygnn.lobber.R
 import com.github.reygnn.lobber.data.ConfigState
 import com.github.reygnn.lobber.data.SettingsStore
 import com.github.reygnn.lobber.ssh.SshConfig
@@ -25,7 +26,7 @@ data class SettingsUiState(
     val workingDir: String = "",
     val privateKeyPem: String = "",
     val saving: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
 )
 
 class SettingsViewModel(
@@ -71,7 +72,7 @@ class SettingsViewModel(
         val s = _state.value
         val port = s.port.toIntOrNull() ?: 22
         if (s.host.isBlank() || s.username.isBlank() || s.workingDir.isBlank() || s.privateKeyPem.isBlank()) {
-            _state.update { it.copy(error = "Alle Felder ausfüllen") }
+            _state.update { it.copy(error = UiText.Resource(R.string.error_fill_all_fields)) }
             return
         }
         viewModelScope.launch {
@@ -88,7 +89,10 @@ class SettingsViewModel(
                 _state.update { it.copy(saving = false) }
                 _savedEvents.trySend(Unit)
             }.onFailure { e ->
-                _state.update { it.copy(saving = false, error = e.message ?: "Fehler") }
+                _state.update {
+                    it.copy(saving = false, error = e.message?.let(UiText::Literal)
+                        ?: UiText.Resource(R.string.error_unknown))
+                }
             }
         }
     }

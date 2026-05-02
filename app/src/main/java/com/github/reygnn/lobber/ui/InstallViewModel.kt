@@ -3,6 +3,7 @@ package com.github.reygnn.lobber.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.reygnn.lobber.BuildConfig
+import com.github.reygnn.lobber.R
 import com.github.reygnn.lobber.data.SettingsStore
 import com.github.reygnn.lobber.ssh.AabEntry
 import com.github.reygnn.lobber.ssh.LogLine
@@ -31,7 +32,7 @@ data class InstallUiState(
     val installing: String? = null,
     val log: List<LogLine> = emptyList(),
     val lastExitCode: Int? = null,
-    val error: String? = null,
+    val error: UiText? = null,
     /**
      * AAB-Name, der gerade auf User-Bestätigung wartet, weil er als
      * Self-Install erkannt wurde. Während dieser Zustand aktiv ist, zeigt
@@ -69,7 +70,10 @@ class InstallViewModel(
                     _state.update { it.copy(loading = false, aabs = aabs) }
                 }
                 .onFailure { e ->
-                    _state.update { it.copy(loading = false, error = e.message ?: "Fehler") }
+                    _state.update {
+                        it.copy(loading = false, error = e.message?.let(UiText::Literal)
+                            ?: UiText.Resource(R.string.error_unknown))
+                    }
                 }
         }
     }
@@ -118,7 +122,8 @@ class InstallViewModel(
             .executeStreaming("$script ${shellQuote(aab)}")
             .catch { e ->
                 _state.update {
-                    it.copy(installing = null, error = e.message ?: "Fehler")
+                    it.copy(installing = null, error = e.message?.let(UiText::Literal)
+                        ?: UiText.Resource(R.string.error_unknown))
                 }
             }
             .collect { line ->

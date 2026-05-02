@@ -20,6 +20,11 @@
     <string name="self_install_body">%1$s looks like a Lobber build. Installing it will kill the running Lobber process mid-stream — you won\'t see the install log finish. Continue?</string>
     <string name="self_install_continue">Continue</string>
 
+    <!-- ViewModel-emitted errors -->
+    <string name="error_fill_all_fields">Fill in all fields</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="error_no_message">(no message)</string>
+
     <!-- Form fields -->
     <string name="field_host">Host</string>
     <string name="field_port">Port</string>

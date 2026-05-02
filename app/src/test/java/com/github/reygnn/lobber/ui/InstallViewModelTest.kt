@@ -83,7 +83,7 @@ class InstallViewModelTest {
 
             val final = expectMostRecentItem()
             assertEquals(false, final.loading)
-            assertEquals("connection refused", final.error)
+            assertEquals(UiText.Literal("connection refused"), final.error)
         }
     }
 
@@ -262,7 +262,7 @@ class InstallViewModelTest {
 
             val final = expectMostRecentItem()
             assertNull(final.installing)
-            assertEquals("ssh closed", final.error)
+            assertEquals(UiText.Literal("ssh closed"), final.error)
         }
     }
 }

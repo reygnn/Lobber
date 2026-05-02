@@ -3,6 +3,7 @@ package com.github.reygnn.lobber.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.reygnn.lobber.R
 import com.github.reygnn.lobber.data.SettingsStore
 import com.github.reygnn.lobber.ssh.SshBootstrap
 import com.github.reygnn.lobber.ssh.SshConfig
@@ -34,7 +35,7 @@ data class OnboardingUiState(
     val password: String = "",
     val workingDir: String = "",
     val step: OnboardingStep = OnboardingStep.Idle,
-    val error: String? = null,
+    val error: UiText? = null,
 )
 
 class OnboardingViewModel(
@@ -59,7 +60,7 @@ class OnboardingViewModel(
     fun start() {
         val s = _state.value
         if (s.host.isBlank() || s.username.isBlank() || s.password.isBlank() || s.workingDir.isBlank()) {
-            _state.update { it.copy(error = "Alle Felder ausfüllen") }
+            _state.update { it.copy(error = UiText.Resource(R.string.error_fill_all_fields)) }
             return
         }
         val port = s.port.toIntOrNull() ?: 22
@@ -104,18 +105,23 @@ class OnboardingViewModel(
             }.onFailure { e ->
                 Log.e("Lobber/Onboarding", "Onboarding failed at ${_state.value.step}", e)
                 _state.update {
-                    it.copy(step = OnboardingStep.Idle, error = formatCauseChain(e))
+                    it.copy(step = OnboardingStep.Idle, error = UiText.Literal(formatCauseChain(e)))
                 }
             }
         }
     }
 
+    /**
+     * Cause-Chain als ein String. Inhalt sind Exception-Nachrichten aus
+     * sshj/BC/JCE — die sind sowieso Englisch, daher ist auch der
+     * Null-Message-Fallback fest auf Englisch (keine Locale-Ressource nötig).
+     */
     private fun formatCauseChain(t: Throwable): String = buildString {
         var current: Throwable? = t
         val seen = HashSet<Throwable>()
         while (current != null && seen.add(current)) {
             if (isNotEmpty()) append("\n→ ")
-            append(current::class.simpleName).append(": ").append(current.message ?: "(keine Nachricht)")
+            append(current::class.simpleName).append(": ").append(current.message ?: "(no message)")
             current = current.cause
         }
     }
