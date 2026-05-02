@@ -76,6 +76,35 @@ Alternativ Context-Injection via `AndroidViewModel.getApplication()`.
 
 ---
 
+## Features
+
+### Import / Export der Settings
+
+Aktuell stecken Host/Port/User/Working-Dir in DataStore und der private
+Ed25519-Key in `filesDir/id_ed25519` — auf einem neuen Phone müsste der
+User komplett neu durchs Onboarding. Ein „Settings exportieren" + „Settings
+importieren" über Storage-Access-Framework-Picker (Document) oder Share-
+Sheet würde das auf zwei Taps reduzieren.
+
+Verschlüsselung ist hier zwingend, nicht optional: ein exportierter
+Klartext-Blob mit dem Privkey wäre so sensibel wie der Key selbst, und
+landet typischerweise in Cloud-Backup, Drive oder Telegram. Mögliche
+Wege:
+- Passphrase-derived AES-GCM (Argon2/scrypt → Key → AES-GCM-Encrypt) —
+  User gibt beim Export+Import jeweils eine Passphrase ein; offline,
+  ohne Server.
+- Android `EncryptedFile` — nur sinnvoll für phone-internen Backup, nicht
+  für portablen Export, da der Key im Android-Keystore steckt.
+
+Format-Vorschlag: JSON-Wrapper mit Versions-Tag und base64-AES-GCM-Inhalt
+(kompakt, leicht zu sichten). Datei-Endung z. B. `.lobber-config`.
+
+UI-seitig: zwei Buttons im Settings-Screen oben, jeweils mit Passphrase-
+Dialog. Vor Export warnen, dass der Key drin ist; vor Import warnen, dass
+bestehende Settings überschrieben werden.
+
+---
+
 ## Nicht-blockierende Beobachtungen
 
 - `executeStreaming` in `SshjClient` öffnet die SSH-Connection erst beim
