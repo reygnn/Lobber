@@ -135,6 +135,46 @@ ein weißer Window-Background — sticht im Dark Mode unangenehm raus. Nötig:
 - Adaptive App-Icon (`mipmap-anydpi-v26`) als `windowSplashScreenAnimatedIcon`,
   damit der Splash-Look einheitlich ist.
 
+### Eigenes App-Icon
+
+`AndroidManifest.xml` setzt kein `android:icon`, `res/` enthält nur
+`values/strings.xml` — Lobber erscheint im Launcher mit dem Android-Default-
+Icon. Nötig:
+- Adaptive Icon: `mipmap-anydpi-v26/ic_launcher.xml` mit `<foreground>` und
+  `<background>` (Vector-Drawables).
+- `<monochrome>` Layer für die themed Icons ab Android 13.
+- `android:icon="@mipmap/ic_launcher"` und
+  `android:roundIcon="@mipmap/ic_launcher_round"` im Manifest.
+
+### Tastatur verdeckt Working-Dir-Feld
+
+Im Settings- und Onboarding-Screen verschwindet das `workingDir`-Eingabefeld
+unter der Software-Tastatur. Beide Screens haben zwar
+`Modifier.verticalScroll(rememberScrollState())` (`ui/Screens.kt:73,249`),
+aber die App zieht das IME-Inset nicht in den Layout-Pass — auf Android 15+
+ist Edge-to-Edge default und Tastatur überlagert dann statt zu resizen.
+
+Lösung in der Größenordnung einer Handvoll Zeilen:
+- `Modifier.imePadding()` auf den scrollbaren Column-Container setzen.
+- Optional `android:windowSoftInputMode="adjustResize"` auf die Activity in
+  `AndroidManifest.xml`, falls das alleine nicht reicht.
+- Beim Fokussieren des Felds idealerweise dorthin scrollen
+  (`bringIntoViewRequester` oder `Modifier.onFocusEvent`).
+
+### Install-Log nach Ende des AAB-Installs sichtbar lassen
+
+`ui/Screens.kt:145` switcht mit `s.installing != null` zwischen Liste und
+`InstallProgress`. Sobald `LogLine.ExitCode` ankommt, setzt
+`InstallViewModel` `installing = null` (`InstallViewModel.kt:75`) und das UI
+springt zurück zur Liste — der Log und der Exit-Code sind weg, bevor man
+sie lesen kann.
+
+Lösung: nach dem Install nicht automatisch zurücknavigieren. Stattdessen
+den Log + Exit-Code stehen lassen und einen expliziten „Fertig"/„Schließen"-
+Button zeigen, der dann erst auf die Liste zurückwechselt. State-Modellierung
+am einfachsten als zusätzliches Feld (z. B. `lastInstallShown: String?`),
+das die View bis zum Dismiss anzeigt.
+
 ---
 
 ## Doku-Konsistenz
