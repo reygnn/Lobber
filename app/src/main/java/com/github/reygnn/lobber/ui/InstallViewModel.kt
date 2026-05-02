@@ -24,6 +24,13 @@ data class InstallUiState(
     val aabs: List<AabEntry> = emptyList(),
     val loading: Boolean = false,
     /**
+     * True sobald der erste `loadAabs()` zurückkam (egal ob Erfolg oder
+     * Fehler). Vorher zeigt die UI keinen Empty-State, sondern den Spinner —
+     * sonst flackert beim Cold-Start kurz „Keine AAB im Working-Dir gefunden",
+     * bevor der laufende Load die Liste populated.
+     */
+    val hasLoadedOnce: Boolean = false,
+    /**
      * AAB-Name solange ein Install-Stream läuft *oder* der Log noch sichtbar
      * sein soll. Wird erst durch [InstallViewModel.dismissInstall] auf `null`
      * gesetzt — vorher bleibt der Log + Exit-Code stehen, damit man ihn lesen
@@ -67,12 +74,16 @@ class InstallViewModel(
             _state.update { it.copy(configured = true, loading = true, error = null) }
             runCatching { createClient(config).listAabs() }
                 .onSuccess { aabs ->
-                    _state.update { it.copy(loading = false, aabs = aabs) }
+                    _state.update { it.copy(loading = false, hasLoadedOnce = true, aabs = aabs) }
                 }
                 .onFailure { e ->
                     _state.update {
-                        it.copy(loading = false, error = e.message?.let(UiText::Literal)
-                            ?: UiText.Resource(R.string.error_unknown))
+                        it.copy(
+                            loading = false,
+                            hasLoadedOnce = true,
+                            error = e.message?.let(UiText::Literal)
+                                ?: UiText.Resource(R.string.error_unknown),
+                        )
                     }
                 }
         }

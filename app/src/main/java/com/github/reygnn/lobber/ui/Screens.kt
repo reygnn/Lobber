@@ -179,7 +179,7 @@ fun InstallerScreen(
                     finished = s.installFinished,
                     onDismiss = viewModel::dismissInstall,
                 )
-                s.loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                !s.hasLoadedOnce -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
                 else -> AabList(

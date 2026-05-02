@@ -63,12 +63,13 @@ class InstallViewModelTest {
         coEvery { client.listAabs() } returns entries
 
         vm.state.test {
-            awaitItem() // Initialer State
+            val initial = awaitItem()
+            assertEquals(false, initial.hasLoadedOnce)
             vm.loadAabs()
 
-            // Wir nutzen expectMostRecentItem, falls loading=true zu schnell geht
             val final = expectMostRecentItem()
             assertEquals(false, final.loading)
+            assertEquals(true, final.hasLoadedOnce)
             assertEquals(entries, final.aabs)
         }
     }
