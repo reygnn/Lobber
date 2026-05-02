@@ -1,5 +1,6 @@
 package com.github.reygnn.lobber.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -34,10 +38,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -134,13 +141,24 @@ fun InstallerScreen(
 ) {
     val s by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        if (s.aabs.isEmpty() && !s.loading) viewModel.loadAabs()
+    // Auf jedem ON_RESUME (App-Start, Rückkehr aus dem Hintergrund) AAB-Liste
+    // refreshen, damit ein frisch gebauter AAB ohne manuellen Refresh-Tap
+    // sichtbar wird. loadAabs() guarded selbst gegen "läuft Install" und
+    // "läuft schon ein Refresh".
+    LifecycleResumeEffect(Unit) {
+        viewModel.loadAabs()
+        onPauseOrDispose { }
     }
 
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text(stringResource(R.string.installer_title, BuildConfig.VERSION_NAME)) },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AdbStatusDot()
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.installer_title, BuildConfig.VERSION_NAME))
+                }
+            },
             actions = {
                 IconButton(onClick = viewModel::loadAabs, enabled = !s.loading && s.installing == null) {
                     Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh_aabs))
@@ -192,6 +210,25 @@ fun InstallerScreen(
 
 private val AabDateFormatter: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
+@Composable
+private fun AdbStatusDot() {
+    val status by adbStatusState()
+    val color = if (status.anyEnabled) {
+        Color(0xFF34C759) // green
+    } else {
+        Color(0xFFFF3B30) // red
+    }
+    val label = stringResource(
+        if (status.anyEnabled) R.string.adb_status_active else R.string.adb_status_inactive
+    )
+    Box(
+        modifier = Modifier
+            .size(10.dp)
+            .background(color, CircleShape)
+            .semantics { contentDescription = label },
+    )
+}
 
 @Composable
 private fun AabList(

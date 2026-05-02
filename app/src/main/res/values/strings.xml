@@ -34,6 +34,8 @@
     <string name="no_aabs_found">No .aab found in working dir.</string>
     <string name="installing_aab">Installing %1$s</string>
     <string name="exit_unknown">unknown</string>
+    <string name="adb_status_active">ADB debugging is active</string>
+    <string name="adb_status_inactive">ADB debugging is off — installs from the build host won\'t reach this phone</string>
 
     <!-- Onboarding screen -->
     <string name="onboarding_intro">Lobber generates a key on the phone and pushes the public key to the build host. You only need a username and password once for that.</string>

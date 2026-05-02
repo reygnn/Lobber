@@ -56,6 +56,7 @@ class InstallViewModel(
 
     fun loadAabs() {
         if (_state.value.installing != null) return
+        if (_state.value.loading) return
         viewModelScope.launch {
             val config = settings.config.first()
             if (config == null) {

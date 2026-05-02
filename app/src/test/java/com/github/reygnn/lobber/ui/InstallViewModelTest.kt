@@ -12,6 +12,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -145,6 +146,22 @@ class InstallViewModelTest {
             assertNull(final.lastExitCode)
             assertEquals(false, final.installFinished)
         }
+    }
+
+    @Test
+    fun `loadAabs called twice in a row only hits the client once`() = runTest(mainDispatcherRule.dispatcher) {
+        val gate = MutableSharedFlow<List<AabEntry>>(replay = 0)
+        coEvery { client.listAabs() } coAnswers { gate.first() }
+
+        vm.loadAabs()
+        vm.loadAabs() // Should be a no-op because the first call is still loading.
+        gate.emit(listOf(AabEntry("a.aab", 1714680000)))
+
+        vm.state.test {
+            val final = expectMostRecentItem()
+            assertEquals(listOf(AabEntry("a.aab", 1714680000)), final.aabs)
+        }
+        coVerify(exactly = 1) { client.listAabs() }
     }
 
     @Test
