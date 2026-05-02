@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Light variant. Splash window paints white outside the icon circle.
+      The icon itself (white L on indigo) comes from @mipmap/ic_launcher and
+      stays consistent across light and dark.
+    -->
+    <style name="Theme.Lobber" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowSplashScreenBackground">#FFFFFFFF</item>
+    </style>
+</resources>

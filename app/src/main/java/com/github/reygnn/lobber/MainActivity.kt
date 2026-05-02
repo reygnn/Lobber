@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +22,7 @@ import com.github.reygnn.lobber.data.ConfigState
 import com.github.reygnn.lobber.data.SettingsStore
 import com.github.reygnn.lobber.ui.InstallViewModel
 import com.github.reygnn.lobber.ui.InstallerScreen
+import com.github.reygnn.lobber.ui.LobberTheme
 import com.github.reygnn.lobber.ui.OnboardingScreen
 import com.github.reygnn.lobber.ui.OnboardingViewModel
 import com.github.reygnn.lobber.ui.SettingsScreen
@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val store = (application as LobberApplication).settingsStore
         setContent {
-            MaterialTheme {
+            LobberTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     LobberApp(store)
                 }

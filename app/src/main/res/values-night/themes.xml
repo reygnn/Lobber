@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Dark variant. Picked up automatically when the device is in dark mode
+      (UI_MODE_NIGHT_YES). Splash window paints dark outside the icon circle.
+    -->
+    <style name="Theme.Lobber" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowSplashScreenBackground">#FF1C1B1F</item>
+    </style>
+</resources>
