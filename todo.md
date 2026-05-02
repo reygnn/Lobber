@@ -116,6 +116,27 @@ Vor dem ersten Release-Build:
 
 ---
 
+## UI / UX
+
+### Dark Mode
+
+Aktuell folgt die Compose-Oberfläche dem Default-`MaterialTheme`. Sauber
+wäre ein eigenes `LobberTheme` mit Light/Dark-`ColorScheme`s, das per
+`isSystemInDarkTheme()` umgeschaltet wird. Material 3 hat das in der Kombi
+mit `dynamicLightColorScheme` / `dynamicDarkColorScheme` (Android 12+) als
+einen Drei-Zeiler.
+
+### Splash Screen mit Dark-Mode-Variante
+
+Android 12+ erzwingt einen Splash über die `SplashScreen`-API. Default ist
+ein weißer Window-Background — sticht im Dark Mode unangenehm raus. Nötig:
+- `Theme.SplashScreen` als Theme deklarieren, `windowSplashScreenBackground`
+  in `values/themes.xml` und `values-night/themes.xml` definieren.
+- Adaptive App-Icon (`mipmap-anydpi-v26`) als `windowSplashScreenAnimatedIcon`,
+  damit der Splash-Look einheitlich ist.
+
+---
+
 ## Doku-Konsistenz
 
 ### `strings.xml` existiert doch
