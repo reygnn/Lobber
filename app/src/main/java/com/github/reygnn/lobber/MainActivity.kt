@@ -14,8 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -95,14 +93,3 @@ private fun LobberApp(store: SettingsStore) {
     }
 }
 
-private class LobberViewModelFactory(
-    private val store: SettingsStore,
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = when (modelClass) {
-        SettingsViewModel::class.java   -> SettingsViewModel(store) as T
-        InstallViewModel::class.java    -> InstallViewModel(store) as T
-        OnboardingViewModel::class.java -> OnboardingViewModel(store) as T
-        else -> error("Unknown ViewModel: ${modelClass.name}")
-    }
-}
