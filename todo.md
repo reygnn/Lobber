@@ -135,17 +135,6 @@ ein weißer Window-Background — sticht im Dark Mode unangenehm raus. Nötig:
 - Adaptive App-Icon (`mipmap-anydpi-v26`) als `windowSplashScreenAnimatedIcon`,
   damit der Splash-Look einheitlich ist.
 
-### Eigenes App-Icon
-
-`AndroidManifest.xml` setzt kein `android:icon`, `res/` enthält nur
-`values/strings.xml` — Lobber erscheint im Launcher mit dem Android-Default-
-Icon. Nötig:
-- Adaptive Icon: `mipmap-anydpi-v26/ic_launcher.xml` mit `<foreground>` und
-  `<background>` (Vector-Drawables).
-- `<monochrome>` Layer für die themed Icons ab Android 13.
-- `android:icon="@mipmap/ic_launcher"` und
-  `android:roundIcon="@mipmap/ic_launcher_round"` im Manifest.
-
 ### Tastatur verdeckt Working-Dir-Feld
 
 Im Settings- und Onboarding-Screen verschwindet das `workingDir`-Eingabefeld
