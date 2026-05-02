@@ -2,6 +2,7 @@ package com.github.reygnn.lobber.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.reygnn.lobber.data.ConfigState
 import com.github.reygnn.lobber.data.SettingsStore
 import com.github.reygnn.lobber.ssh.SshConfig
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,8 +30,9 @@ class SettingsViewModel(
     private val settings: SettingsStore,
 ) : ViewModel() {
 
-    val isConfigured: StateFlow<Boolean?> = settings.isConfigured
-        .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
+    val configState: StateFlow<ConfigState> = settings.isConfigured
+        .map { if (it) ConfigState.Configured else ConfigState.Unconfigured }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = ConfigState.Loading)
 
     private val _state = MutableStateFlow(SettingsUiState())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()

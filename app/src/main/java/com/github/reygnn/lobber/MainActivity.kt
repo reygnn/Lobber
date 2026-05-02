@@ -21,6 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.github.reygnn.lobber.data.ConfigState
 import com.github.reygnn.lobber.data.SettingsStore
 import com.github.reygnn.lobber.ui.InstallViewModel
 import com.github.reygnn.lobber.ui.InstallerScreen
@@ -51,16 +52,16 @@ private fun LobberApp(store: SettingsStore) {
     val installVm: InstallViewModel = viewModel(factory = factory)
     val onboardingVm: OnboardingViewModel = viewModel(factory = factory)
 
-    val configured by settingsVm.isConfigured.collectAsStateWithLifecycle()
+    val configState by settingsVm.configState.collectAsStateWithLifecycle()
     val nav = rememberNavController()
 
     NavHost(navController = nav, startDestination = "loading") {
         composable("loading") {
-            LaunchedEffect(configured) {
-                when (configured) {
-                    true  -> nav.navigate("installer")  { popUpTo("loading") { inclusive = true } }
-                    false -> nav.navigate("onboarding") { popUpTo("loading") { inclusive = true } }
-                    null  -> Unit // still resolving
+            LaunchedEffect(configState) {
+                when (configState) {
+                    ConfigState.Configured   -> nav.navigate("installer")  { popUpTo("loading") { inclusive = true } }
+                    ConfigState.Unconfigured -> nav.navigate("onboarding") { popUpTo("loading") { inclusive = true } }
+                    ConfigState.Loading      -> Unit // still resolving
                 }
             }
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
