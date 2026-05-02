@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.github.reygnn.lobber.BuildConfig
 import com.github.reygnn.lobber.ssh.AabEntry
 import com.github.reygnn.lobber.ssh.LogLine
 import java.time.Instant
@@ -132,7 +133,7 @@ fun InstallerScreen(
 
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text("Lobber") },
+            title = { Text("Lobber ${BuildConfig.VERSION_NAME}") },
             actions = {
                 IconButton(onClick = viewModel::loadAabs, enabled = !s.loading && s.installing == null) {
                     Text("⟳")
