@@ -64,6 +64,28 @@ class OnboardingViewModelTest {
     }
 
     @Test
+    fun `happy path emits exactly one done event`() = runTest(mainDispatcherRule.dispatcher) {
+        fillForm()
+        vm.start()
+        vm.doneEvents.test {
+            awaitItem()
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `failure path emits no done event`() = runTest(mainDispatcherRule.dispatcher) {
+        coEvery { bootstrap.verifyPubkeyAuth(any()) } throws IOException("nope")
+        fillForm()
+        vm.start()
+        vm.doneEvents.test {
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `pushPublicKey failure surfaces error and resets to Idle`() = runTest(mainDispatcherRule.dispatcher) {
         coEvery { bootstrap.pushPublicKey(any(), any(), any(), any(), any()) } throws IOException("auth failed")
         fillForm()

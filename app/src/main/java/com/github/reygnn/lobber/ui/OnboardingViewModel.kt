@@ -9,9 +9,12 @@ import com.github.reygnn.lobber.ssh.SshConfig
 import com.github.reygnn.lobber.ssh.SshKeyPair
 import com.github.reygnn.lobber.ssh.SshKeygen
 import com.github.reygnn.lobber.ssh.SshjBootstrap
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -42,6 +45,10 @@ class OnboardingViewModel(
 
     private val _state = MutableStateFlow(OnboardingUiState())
     val state: StateFlow<OnboardingUiState> = _state.asStateFlow()
+
+    private val _doneEvents = Channel<Unit>(capacity = Channel.BUFFERED)
+    /** Einmalige Side-Effect-Events für Navigation; Compose collected per LaunchedEffect. */
+    val doneEvents: Flow<Unit> = _doneEvents.receiveAsFlow()
 
     fun onHost(v: String) = _state.update { it.copy(host = v) }
     fun onPort(v: String) = _state.update { it.copy(port = v.filter { c -> c.isDigit() }) }
@@ -93,6 +100,7 @@ class OnboardingViewModel(
                 settings.savePubKey(pair.publicKeyOpenSsh)
             }.onSuccess {
                 _state.update { it.copy(step = OnboardingStep.Done, password = "") }
+                _doneEvents.trySend(Unit)
             }.onFailure { e ->
                 Log.e("Lobber/Onboarding", "Onboarding failed at ${_state.value.step}", e)
                 _state.update {
@@ -101,8 +109,6 @@ class OnboardingViewModel(
             }
         }
     }
-
-    fun consumeDone() = _state.update { it.copy(step = OnboardingStep.Idle) }
 
     private fun formatCauseChain(t: Throwable): String = buildString {
         var current: Throwable? = t

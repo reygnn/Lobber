@@ -48,11 +48,8 @@ fun SettingsScreen(
 ) {
     val s by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(s.saved) {
-        if (s.saved) {
-            viewModel.consumeSaved()
-            onSaved()
-        }
+    LaunchedEffect(Unit) {
+        viewModel.savedEvents.collect { onSaved() }
     }
 
     Scaffold(topBar = {
@@ -228,11 +225,8 @@ fun OnboardingScreen(
 ) {
     val s by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(s.step) {
-        if (s.step == OnboardingStep.Done) {
-            viewModel.consumeDone()
-            onDone()
-        }
+    LaunchedEffect(Unit) {
+        viewModel.doneEvents.collect { onDone() }
     }
 
     val running = s.step != OnboardingStep.Idle && s.step != OnboardingStep.Done
