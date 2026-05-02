@@ -37,7 +37,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.github.reygnn.lobber.ssh.AabEntry
 import com.github.reygnn.lobber.ssh.LogLine
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,9 +157,12 @@ fun InstallerScreen(
     }
 }
 
+private val AabDateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
 @Composable
 private fun AabList(
-    aabs: List<String>,
+    aabs: List<AabEntry>,
     error: String?,
     onInstall: (String) -> Unit,
 ) {
@@ -169,20 +176,30 @@ private fun AabList(
             return@Column
         }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(aabs) { name ->
+            items(aabs) { entry ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(name, modifier = Modifier.weight(1f))
-                        Button(onClick = { onInstall(name) }) { Text("Install") }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(entry.name)
+                            Text(
+                                text = formatAabDate(entry.mtimeEpochSeconds),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Button(onClick = { onInstall(entry.name) }) { Text("Install") }
                     }
                 }
             }
         }
     }
 }
+
+private fun formatAabDate(epochSeconds: Long): String =
+    AabDateFormatter.format(Instant.ofEpochSecond(epochSeconds).atZone(ZoneId.systemDefault()))
 
 @Composable
 private fun InstallProgress(aab: String, log: List<LogLine>) {

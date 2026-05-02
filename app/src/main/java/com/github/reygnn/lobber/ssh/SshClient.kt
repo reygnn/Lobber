@@ -18,7 +18,19 @@ sealed interface LogLine {
     data class ExitCode(val code: Int?) : LogLine
 }
 
+/**
+ * @property name Dateiname (ohne Pfad), wie er an das Install-Skript übergeben wird.
+ * @property mtimeEpochSeconds mtime des Datei-**Ziels** (folgt Symlinks). Bei einem
+ *   Symlink auf `app/build/outputs/bundle/release/app-release.aab` ist das der
+ *   Zeitpunkt, an dem bundletool das AAB geschrieben hat.
+ */
+data class AabEntry(
+    val name: String,
+    val mtimeEpochSeconds: Long,
+)
+
 interface SshClient {
-    suspend fun listAabs(): List<String>
+    /** Liste, sortiert nach mtime absteigend (frischestes AAB zuerst). */
+    suspend fun listAabs(): List<AabEntry>
     fun executeStreaming(command: String): Flow<LogLine>
 }

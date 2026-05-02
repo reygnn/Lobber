@@ -31,15 +31,15 @@ class SshjClient(
         return ssh
     }
 
-    override suspend fun listAabs(): List<String> = withContext(Dispatchers.IO) {
+    override suspend fun listAabs(): List<AabEntry> = withContext(Dispatchers.IO) {
         connect().use { ssh ->
             ssh.startSession().use { session ->
-                // -L follows symlinks (user's discovery workflow uses symlinks
-                // into per-project bundle dirs), -type f filters out dangling
-                // symlinks. find returns exit 0 with empty output when the
-                // glob has no matches, so the empty-list path is unambiguous.
+                // -L follows symlinks; -type f filters dangling links; -printf
+                // emits "<epoch>\t<path>\n" so we get target-mtime alongside
+                // the path in one round-trip. %T@ has fractional seconds —
+                // we drop the fraction, second precision is plenty.
                 val cmd = session.exec(
-                    "find -L ${pathQuote(config.workingDir)} -maxdepth 1 -name '*.aab' -type f"
+                    "find -L ${pathQuote(config.workingDir)} -maxdepth 1 -name '*.aab' -type f -printf '%T@\\t%p\\n'"
                 )
                 val out = cmd.inputStream.bufferedReader().readText()
                 val err = cmd.errorStream.bufferedReader().readText()
@@ -52,7 +52,8 @@ class SshjClient(
                 }
                 out.lineSequence()
                     .filter { it.isNotBlank() }
-                    .map { it.substringAfterLast('/') }
+                    .mapNotNull(::parseFindPrintfLine)
+                    .sortedByDescending { it.mtimeEpochSeconds }
                     .toList()
             }
         }
@@ -83,6 +84,20 @@ class SshjClient(
             }
         }
     }.flowOn(Dispatchers.IO)
+}
+
+/**
+ * Parst eine Zeile aus `find -printf '%T@\t%p\n'`. Gibt `null` zurück, wenn die
+ * Zeile nicht dem erwarteten Format entspricht — Aufrufer filtert via
+ * `mapNotNull`.
+ */
+internal fun parseFindPrintfLine(line: String): AabEntry? {
+    val tab = line.indexOf('\t')
+    if (tab <= 0) return null
+    val epoch = line.substring(0, tab).substringBefore('.').toLongOrNull() ?: return null
+    val path = line.substring(tab + 1)
+    if (path.isEmpty()) return null
+    return AabEntry(name = path.substringAfterLast('/'), mtimeEpochSeconds = epoch)
 }
 
 internal fun shellQuote(s: String): String =

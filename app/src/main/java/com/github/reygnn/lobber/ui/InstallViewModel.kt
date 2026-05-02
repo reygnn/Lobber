@@ -3,6 +3,7 @@ package com.github.reygnn.lobber.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.reygnn.lobber.data.SettingsStore
+import com.github.reygnn.lobber.ssh.AabEntry
 import com.github.reygnn.lobber.ssh.LogLine
 import com.github.reygnn.lobber.ssh.SshClient
 import com.github.reygnn.lobber.ssh.SshConfig
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 
 data class InstallUiState(
     val configured: Boolean = true,
-    val aabs: List<String> = emptyList(),
+    val aabs: List<AabEntry> = emptyList(),
     val loading: Boolean = false,
     val installing: String? = null,
     val log: List<LogLine> = emptyList(),

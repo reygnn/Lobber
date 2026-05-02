@@ -3,6 +3,7 @@ package com.github.reygnn.lobber.ui
 import app.cash.turbine.test
 import com.github.reygnn.lobber.MainDispatcherRule
 import com.github.reygnn.lobber.data.SettingsStore
+import com.github.reygnn.lobber.ssh.AabEntry
 import com.github.reygnn.lobber.ssh.LogLine
 import com.github.reygnn.lobber.ssh.SshClient
 import com.github.reygnn.lobber.ssh.SshConfig
@@ -50,7 +51,11 @@ class InstallViewModelTest {
 
     @Test
     fun `loadAabs populates state with files`() = runTest(mainDispatcherRule.dispatcher) {
-        coEvery { client.listAabs() } returns listOf("app-release.aab", "app-debug.aab")
+        val entries = listOf(
+            AabEntry("app-release.aab", 1714680000),
+            AabEntry("app-debug.aab", 1714600000),
+        )
+        coEvery { client.listAabs() } returns entries
 
         vm.state.test {
             awaitItem() // Initialer State
@@ -59,7 +64,7 @@ class InstallViewModelTest {
             // Wir nutzen expectMostRecentItem, falls loading=true zu schnell geht
             val final = expectMostRecentItem()
             assertEquals(false, final.loading)
-            assertEquals(listOf("app-release.aab", "app-debug.aab"), final.aabs)
+            assertEquals(entries, final.aabs)
         }
     }
 
@@ -121,7 +126,10 @@ class InstallViewModelTest {
         // Hold the install flow open so we stay in `installing != null`.
         val gate = MutableSharedFlow<LogLine>(replay = 1)
         every { client.executeStreaming(any()) } returns gate
-        coEvery { client.listAabs() } returns listOf("a.aab", "b.aab")
+        coEvery { client.listAabs() } returns listOf(
+            AabEntry("a.aab", 1714680000),
+            AabEntry("b.aab", 1714600000),
+        )
 
         vm.install("app-release.aab")
         vm.state.test {
