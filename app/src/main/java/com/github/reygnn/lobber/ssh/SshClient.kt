@@ -33,4 +33,11 @@ interface SshClient {
     /** Liste, sortiert nach mtime absteigend (frischestes AAB zuerst). */
     suspend fun listAabs(): List<AabEntry>
     fun executeStreaming(command: String): Flow<LogLine>
+    /**
+     * Prüft, ob der AAB (im Working-Dir) das gegebene Package enthält. Nutzt
+     * `unzip -p … | grep -aFq` auf dem Build-Host — Package-ID steckt als UTF-8-
+     * String im binären AndroidManifest.xml, fixed-string-Match reicht.
+     * Returns false, wenn `unzip` fehlt oder der AAB nicht lesbar ist.
+     */
+    suspend fun aabContainsPackage(aabName: String, pkg: String): Boolean
 }

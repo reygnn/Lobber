@@ -9,9 +9,16 @@
 
     <!-- Common actions -->
     <string name="back">Back</string>
+    <string name="cancel">Cancel</string>
+    <string name="done">Done</string>
     <string name="install">Install</string>
     <string name="save">Save</string>
     <string name="saving">Saving…</string>
+
+    <!-- Self-install confirmation -->
+    <string name="self_install_title">Install Lobber over itself?</string>
+    <string name="self_install_body">%1$s looks like a Lobber build. Installing it will kill the running Lobber process mid-stream — you won\'t see the install log finish. Continue?</string>
+    <string name="self_install_continue">Continue</string>
 
     <!-- Form fields -->
     <string name="field_host">Host</string>

@@ -59,6 +59,19 @@ class SshjClient(
         }
     }
 
+    override suspend fun aabContainsPackage(aabName: String, pkg: String): Boolean = withContext(Dispatchers.IO) {
+        connect().use { ssh ->
+            ssh.startSession().use { session ->
+                val cmd = session.exec(
+                    "unzip -p ${pathQuote(config.workingDir)}/${shellQuote(aabName)} " +
+                        "base/manifest/AndroidManifest.xml | grep -aFq -- ${shellQuote(pkg)}"
+                )
+                cmd.join(15, TimeUnit.SECONDS)
+                cmd.exitStatus == 0
+            }
+        }
+    }
+
     override fun executeStreaming(command: String): Flow<LogLine> = channelFlow {
         val full = "cd ${pathQuote(config.workingDir)} && $command"
 

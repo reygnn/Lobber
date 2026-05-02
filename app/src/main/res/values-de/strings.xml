@@ -9,9 +9,16 @@
 
     <!-- Common actions -->
     <string name="back">Zurück</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="done">Fertig</string>
     <!-- install: same word in DE -->
     <string name="save">Speichern</string>
     <string name="saving">Speichere…</string>
+
+    <!-- Self-install confirmation -->
+    <string name="self_install_title">Lobber über sich selbst installieren?</string>
+    <string name="self_install_body">%1$s sieht nach einem Lobber-Build aus. Beim Installieren wird der laufende Lobber-Prozess mitten im Stream gekillt — du siehst den Install-Log nicht zu Ende. Trotzdem fortfahren?</string>
+    <string name="self_install_continue">Fortfahren</string>
 
     <!-- Form fields -->
     <!-- field_host, field_port: identical to English -->

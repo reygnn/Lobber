@@ -62,20 +62,6 @@ Lösung in der Größenordnung einer Handvoll Zeilen:
 - Beim Fokussieren des Felds idealerweise dorthin scrollen
   (`bringIntoViewRequester` oder `Modifier.onFocusEvent`).
 
-### Install-Log nach Ende des AAB-Installs sichtbar lassen
-
-`ui/Screens.kt:145` switcht mit `s.installing != null` zwischen Liste und
-`InstallProgress`. Sobald `LogLine.ExitCode` ankommt, setzt
-`InstallViewModel` `installing = null` (`InstallViewModel.kt:75`) und das UI
-springt zurück zur Liste — der Log und der Exit-Code sind weg, bevor man
-sie lesen kann.
-
-Lösung: nach dem Install nicht automatisch zurücknavigieren. Stattdessen
-den Log + Exit-Code stehen lassen und einen expliziten „Fertig"/„Schließen"-
-Button zeigen, der dann erst auf die Liste zurückwechselt. State-Modellierung
-am einfachsten als zusätzliches Feld (z. B. `lastInstallShown: String?`),
-das die View bis zum Dismiss anzeigt.
-
 ### ViewModel-Fehlermeldungen lokalisieren
 
 `OnboardingViewModel`, `SettingsViewModel` und `InstallViewModel` setzen

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -46,6 +47,9 @@ class InstallViewModelTest {
     @Before
     fun setUp() {
         every { settings.config } returns flowOf(config)
+        // Default: AAB doesn't contain our package — install proceeds without
+        // the self-install dialog. Tests that exercise the dialog override.
+        coEvery { client.aabContainsPackage(any(), any()) } returns false
         vm = InstallViewModel(settings = settings, createClient = { client })
     }
 
@@ -83,7 +87,7 @@ class InstallViewModelTest {
     }
 
     @Test
-    fun `install streams log lines and clears installing on exit`() = runTest(mainDispatcherRule.dispatcher) {
+    fun `install keeps installing set after exit so the log stays visible`() = runTest(mainDispatcherRule.dispatcher) {
         every { client.executeStreaming(any()) } returns flowOf(
             LogLine.Stdout("starting"),
             LogLine.Stdout("done"),
@@ -94,9 +98,9 @@ class InstallViewModelTest {
             awaitItem() // Initialer State
             vm.install("app-release.aab")
 
-            // Hier warten wir auf das Ergebnis nach dem Stream
             val final = expectMostRecentItem()
-            assertNull(final.installing)
+            assertEquals("app-release.aab", final.installing)
+            assertTrue(final.installFinished)
             assertEquals(3, final.log.size)
             assertEquals(LogLine.ExitCode(0), final.log.last())
             assertEquals(0, final.lastExitCode)
@@ -115,9 +119,31 @@ class InstallViewModelTest {
             vm.install("app-release.aab")
 
             val final = expectMostRecentItem()
-            assertNull(final.installing)
+            assertEquals("app-release.aab", final.installing)
+            assertTrue(final.installFinished)
             assertEquals(LogLine.ExitCode(null), final.log.last())
             assertNull(final.lastExitCode)
+        }
+    }
+
+    @Test
+    fun `dismissInstall returns to the AAB list and clears the log`() = runTest(mainDispatcherRule.dispatcher) {
+        every { client.executeStreaming(any()) } returns flowOf(
+            LogLine.Stdout("done"),
+            LogLine.ExitCode(0),
+        )
+
+        vm.install("app-release.aab")
+        vm.state.test {
+            // Wait until the install is finished.
+            while (!awaitItem().installFinished) { /* drain */ }
+
+            vm.dismissInstall()
+            val final = expectMostRecentItem()
+            assertNull(final.installing)
+            assertTrue(final.log.isEmpty())
+            assertNull(final.lastExitCode)
+            assertEquals(false, final.installFinished)
         }
     }
 
@@ -144,6 +170,69 @@ class InstallViewModelTest {
         }
 
         coVerify(exactly = 0) { client.listAabs() }
+    }
+
+    @Test
+    fun `install on AAB whose manifest contains our package asks for confirmation first`() = runTest(mainDispatcherRule.dispatcher) {
+        coEvery { client.aabContainsPackage("app-release.aab", any()) } returns true
+
+        vm.state.test {
+            awaitItem()
+            vm.install("app-release.aab")
+
+            val final = expectMostRecentItem()
+            assertEquals("app-release.aab", final.pendingSelfInstall)
+            assertNull(final.installing) // not started yet
+        }
+        coVerify(exactly = 0) { client.executeStreaming(any()) }
+    }
+
+    @Test
+    fun `confirmSelfInstall starts the actual install`() = runTest(mainDispatcherRule.dispatcher) {
+        coEvery { client.aabContainsPackage("app-release.aab", any()) } returns true
+        every { client.executeStreaming(any()) } returns flowOf(
+            LogLine.Stdout("starting"),
+            LogLine.ExitCode(0),
+        )
+
+        vm.install("app-release.aab")
+        vm.confirmSelfInstall()
+        vm.state.test {
+            val final = expectMostRecentItem()
+            assertNull(final.pendingSelfInstall)
+            assertEquals("app-release.aab", final.installing)
+            assertTrue(final.installFinished)
+        }
+    }
+
+    @Test
+    fun `cancelSelfInstall clears the pending state without installing`() = runTest(mainDispatcherRule.dispatcher) {
+        coEvery { client.aabContainsPackage("app-release.aab", any()) } returns true
+
+        vm.install("app-release.aab")
+        vm.cancelSelfInstall()
+        vm.state.test {
+            val final = expectMostRecentItem()
+            assertNull(final.pendingSelfInstall)
+            assertNull(final.installing)
+        }
+        coVerify(exactly = 0) { client.executeStreaming(any()) }
+    }
+
+    @Test
+    fun `manifest check failure falls back to no warning`() = runTest(mainDispatcherRule.dispatcher) {
+        coEvery { client.aabContainsPackage(any(), any()) } throws IOException("unzip not installed")
+        every { client.executeStreaming(any()) } returns flowOf(
+            LogLine.Stdout("ok"),
+            LogLine.ExitCode(0),
+        )
+
+        vm.install("app-release.aab")
+        vm.state.test {
+            val final = expectMostRecentItem()
+            assertNull(final.pendingSelfInstall)
+            assertEquals("app-release.aab", final.installing)
+        }
     }
 
     @Test

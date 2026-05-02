@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -152,7 +153,12 @@ fun InstallerScreen(
     }) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
-                s.installing != null -> InstallProgress(aab = s.installing!!, log = s.log)
+                s.installing != null -> InstallProgress(
+                    aab = s.installing!!,
+                    log = s.log,
+                    finished = s.installFinished,
+                    onDismiss = viewModel::dismissInstall,
+                )
                 s.loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
@@ -163,6 +169,24 @@ fun InstallerScreen(
                 )
             }
         }
+    }
+
+    s.pendingSelfInstall?.let { aab ->
+        AlertDialog(
+            onDismissRequest = viewModel::cancelSelfInstall,
+            title = { Text(stringResource(R.string.self_install_title)) },
+            text = { Text(stringResource(R.string.self_install_body, aab)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmSelfInstall) {
+                    Text(stringResource(R.string.self_install_continue))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::cancelSelfInstall) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
     }
 }
 
@@ -211,7 +235,12 @@ private fun formatAabDate(epochSeconds: Long): String =
     AabDateFormatter.format(Instant.ofEpochSecond(epochSeconds).atZone(ZoneId.systemDefault()))
 
 @Composable
-private fun InstallProgress(aab: String, log: List<LogLine>) {
+private fun InstallProgress(
+    aab: String,
+    log: List<LogLine>,
+    finished: Boolean,
+    onDismiss: () -> Unit,
+) {
     val listState = rememberLazyListState()
     LaunchedEffect(log.size) {
         if (log.isNotEmpty()) listState.animateScrollToItem(log.lastIndex)
@@ -238,6 +267,15 @@ private fun InstallProgress(aab: String, log: List<LogLine>) {
                     fontFamily = FontFamily.Monospace,
                     style = MaterialTheme.typography.bodySmall,
                 )
+            }
+        }
+        if (finished) {
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.done))
             }
         }
     }
