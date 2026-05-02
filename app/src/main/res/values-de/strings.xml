@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- app_name unchanged: "Lobber" -->
+
+    <!-- TopAppBar titles -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="onboarding_title">Erst-Setup</string>
+    <!-- installer_title same as default ("Lobber %1$s") -->
+
+    <!-- Common actions -->
+    <string name="back">Zurück</string>
+    <!-- install: same word in DE -->
+    <string name="save">Speichern</string>
+    <string name="saving">Speichere…</string>
+
+    <!-- Form fields -->
+    <!-- field_host, field_port: identical to English -->
+    <!-- field_user: identical -->
+    <string name="field_password_once">Passwort (nur einmalig)</string>
+    <string name="field_working_dir">Working dir (mit install-aab.sh)</string>
+    <string name="field_private_key">id_ed25519 (PEM, kompletter Block)</string>
+
+    <!-- Installer screen -->
+    <string name="refresh_aabs">AAB-Liste neu laden</string>
+    <string name="open_settings">Einstellungen öffnen</string>
+    <string name="no_aabs_found">Keine .aab im Working-Dir gefunden.</string>
+    <string name="installing_aab">Installiere %1$s</string>
+    <string name="exit_unknown">unbekannt</string>
+
+    <!-- Onboarding screen -->
+    <string name="onboarding_intro">Lobber erzeugt einen Schlüssel auf dem Phone und legt den Pubkey auf dem Build-Host ab. Dafür brauchst du einmalig User &amp; Passwort.</string>
+    <string name="onboarding_start">Auto-Setup starten</string>
+    <string name="onboarding_running">Läuft …</string>
+    <string name="onboarding_have_key">Ich habe schon einen Schlüssel</string>
+
+    <!-- Onboarding step labels -->
+    <string name="step_generating">Erzeuge Ed25519-Schlüssel …</string>
+    <string name="step_pushing">Lege Pubkey auf dem Build-Host ab …</string>
+    <string name="step_verifying">Verifiziere Pubkey-Login …</string>
+    <string name="step_saving">Speichere Konfiguration …</string>
+    <string name="step_done">Fertig</string>
+</resources>

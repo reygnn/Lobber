@@ -1,8 +1,9 @@
 # TODO
 
-Punkte aus dem Code-Review vom 2026-04-29. Reihenfolge ist grob nach
-„Sicherheit / korrektheit / nice-to-have" sortiert; nichts davon blockiert
-v0.1, aber alles ist potenziell relevant vor einer breiteren Distribution.
+Punkte aus dem Code-Review vom 2026-04-29 plus laufenden Iterationen. Reihenfolge
+ist grob nach „Sicherheit / korrektheit / nice-to-have" sortiert; nichts davon
+blockiert v0.2, aber alles ist potenziell relevant vor einer breiteren
+Distribution.
 
 ---
 
@@ -44,78 +45,6 @@ falls auf Android verfügbar).
 
 ---
 
-## Korrektheit / Robustheit
-
-### `LogLine.ExitCode(cmd.exitStatus ?: -1)`
-
-`ssh/SshjClient.kt:71` — wenn sshj keinen Exit-Code liefert, kommt `-1`. Die
-UI rendert das in `ui/Screens.kt:204-208` als „─── exit -1 ───" rot, also als
-ob das Skript mit Fehler beendet hätte. Korrektere Variante: eigener
-`LogLine.ExitCode(code: Int?)` mit `null` für „unbekannt", in der UI als
-neutraler Text („─── exit unbekannt ───").
-
-### `InstallViewModel.loadAabs()` prüft nicht `installing`
-
-`ui/InstallViewModel.kt:37-53` — wenn der Refresh-Button schneller drückt als
-das UI ihn deaktiviert (oder per Tests/Configuration-Change), könnte
-`loadAabs()` während eines laufenden Installs feuern. Die UI sperrt das in
-`ui/Screens.kt:135` (`enabled = !s.loading && s.installing == null`), die VM
-sollte aber selbst defensiv sein — single-source-of-truth.
-
-Lösung: `if (_state.value.installing != null) return` als erste Zeile.
-
-### `isConfigured: StateFlow<Boolean?>` mit `null` als Loading-State
-
-`ui/SettingsViewModel.kt:31-32` und `MainActivity.kt:55-62` — `null` heißt
-„DataStore noch nicht emittiert", `true`/`false` das eigentliche Ergebnis.
-Funktioniert, aber `null` als Sentinel ist subtil. Ein `sealed interface
-ConfigState { data object Loading; data object Unconfigured; data object
-Configured }` wäre lesbarer, kostet aber etwas Boilerplate.
-
-Eher Nice-to-have als Bug.
-
----
-
-## Code-Hygiene
-
-### Duplikat `shellQuote` / `shellQuoteArg`
-
-Identische Implementierung in `ssh/SshjClient.kt:78` (`internal fun
-shellQuote`) und `ui/InstallViewModel.kt:88` (`private fun shellQuoteArg`).
-Eine davon kann weg — entweder `shellQuoteArg` durch `shellQuote` ersetzen
-oder umgekehrt.
-
-### `LobberViewModelFactory` als `private class` in `MainActivity.kt`
-
-`MainActivity.kt:85-94` — bei jedem neuen ViewModel muss der `when`-Zweig in
-der Activity erweitert werden (gerade beim Onboarding gemacht). Bei drei VMs
-noch ok; sobald es vier oder fünf werden, in eigene Datei ziehen.
-
-### `SettingsViewModel.consumeSaved()` als One-Shot-Event-Pattern
-
-`ui/SettingsViewModel.kt:86` und `ui/OnboardingViewModel.kt:101` —
-beide nutzen das gleiche „Boolean-Flag im State + consume nach
-`LaunchedEffect`"-Muster. Compose-empfohlene Alternative wäre ein
-`Channel`/`SharedFlow` für Side-Effects. Aktuell unauffällig, aber wenn ein
-drittes Event-Pattern dazukommt, gemeinsam refaktorieren.
-
----
-
-## Build / Release
-
-### Kein Release-Signing-Config in `app/build.gradle.kts`
-
-`app/build.gradle.kts:20-25` definiert nur `isMinifyEnabled = true` für
-`release`. Ohne `signingConfig` baut `assembleRelease` zwar, das resultierende
-APK ist aber unsigniert — auf Android 16 nicht installierbar.
-
-Vor dem ersten Release-Build:
-- `signingConfig`-Block (entweder Debug-Key für lokales Test-Sideloading oder
-  einen separaten Upload-Key in `keystore/`).
-- `versionCode` hochzählen (ist in `build.gradle.kts:15` bei `1`).
-
----
-
 ## UI / UX
 
 ### Tastatur verdeckt Working-Dir-Feld
@@ -147,25 +76,17 @@ Button zeigen, der dann erst auf die Liste zurückwechselt. State-Modellierung
 am einfachsten als zusätzliches Feld (z. B. `lastInstallShown: String?`),
 das die View bis zum Dismiss anzeigt.
 
----
+### ViewModel-Fehlermeldungen lokalisieren
 
-## Doku-Konsistenz
+`OnboardingViewModel`, `SettingsViewModel` und `InstallViewModel` setzen
+Fehlertexte hardcoded (z. B. `"Alle Felder ausfüllen"`, `"Fehler"`,
+`formatCauseChain`). Mit der Aufteilung auf `values/strings.xml` (en) und
+`values-de/strings.xml` (de) erscheinen UI-Composables jetzt in der richtigen
+Sprache, VM-emittierte Fehler aber weiterhin nur in der hardcoded Sprache.
 
-### `strings.xml` existiert doch
-
-`app/src/main/res/values/strings.xml` enthält `<string name="app_name">Lobber</string>`,
-referenziert via `android:label="@string/app_name"` im `AndroidManifest.xml:8`.
-
-Sowohl `CLAUDE.md` (Sektion „Localization") als auch die aktuelle
-`README.md` (Sektion „Namensgebung umbenennen") behaupten, es gäbe keine
-`strings.xml`. Das ist falsch.
-
-Optionen:
-- Doku korrigieren: bestätigen, dass es eine minimale `strings.xml` mit nur
-  `app_name` gibt, und Lokalisierungs-Pfad davon ausgehend beschreiben.
-- Oder den `app_name`-Eintrag entfernen und ihn z. B. via `applicationId`
-  oder `android:label` direkt im Manifest setzen, dann passt die bisherige
-  Aussage „keine `strings.xml`" wieder.
+Lösung-Skizze: VM hält statt `String` einen sealed `UiText { Resource(id);
+Literal(s) }` o. Ä. im State; das Composable resolved über `stringResource()`.
+Alternativ Context-Injection via `AndroidViewModel.getApplication()`.
 
 ---
 

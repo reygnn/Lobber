@@ -123,10 +123,18 @@ private fun stubStore() {
 
 ## Localization
 
-Lobber is **German-only** for now. UI strings are hardcoded in Compose
-(`ui/Screens.kt`) — there is no `res/values/strings.xml` and no `values-de`.
-If a second locale is ever needed, extract to `strings.xml` first, then add a
-`values-<locale>` override.
+Lobber ships **English (default) and German**. UI strings live in
+`res/values/strings.xml` (English) and `res/values-de/strings.xml` (German).
+Composables resolve them via `stringResource(R.string.…)`.
+
+ViewModel-emitted error strings are still hardcoded for now — see the
+todo.md "ViewModel-Fehlermeldungen lokalisieren" entry. When adding a new
+user-facing string, prefer `strings.xml` from the start; only fall back to
+hardcoded strings inside ViewModels if you can't reach Context, and keep them
+in English so the default locale matches.
+
+To add a third locale: drop a `res/values-<locale>/strings.xml` with the
+overrides; missing keys fall back to the English default.
 
 ---
 

@@ -1,4 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Lobber</string>
+
+    <!-- TopAppBar titles -->
+    <string name="settings_title">Settings</string>
+    <string name="installer_title">Lobber %1$s</string>
+    <string name="onboarding_title">First-time setup</string>
+
+    <!-- Common actions -->
+    <string name="back">Back</string>
+    <string name="install">Install</string>
+    <string name="save">Save</string>
+    <string name="saving">Saving…</string>
+
+    <!-- Form fields -->
+    <string name="field_host">Host</string>
+    <string name="field_port">Port</string>
+    <string name="field_user">User</string>
+    <string name="field_password_once">Password (one time)</string>
+    <string name="field_working_dir">Working dir (with install-aab.sh)</string>
+    <string name="field_private_key">id_ed25519 (PEM, full block)</string>
+
+    <!-- Installer screen -->
+    <string name="refresh_aabs">Reload AAB list</string>
+    <string name="open_settings">Open settings</string>
+    <string name="no_aabs_found">No .aab found in working dir.</string>
+    <string name="installing_aab">Installing %1$s</string>
+    <string name="exit_unknown">unknown</string>
+
+    <!-- Onboarding screen -->
+    <string name="onboarding_intro">Lobber generates a key on the phone and pushes the public key to the build host. You only need a username and password once for that.</string>
+    <string name="onboarding_start">Start auto-setup</string>
+    <string name="onboarding_running">Running…</string>
+    <string name="onboarding_have_key">I already have a key</string>
+
+    <!-- Onboarding step labels -->
+    <string name="step_generating">Generating Ed25519 key…</string>
+    <string name="step_pushing">Pushing public key to build host…</string>
+    <string name="step_verifying">Verifying public-key login…</string>
+    <string name="step_saving">Saving configuration…</string>
+    <string name="step_done">Done</string>
 </resources>

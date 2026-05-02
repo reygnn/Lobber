@@ -36,12 +36,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.reygnn.lobber.BuildConfig
+import com.github.reygnn.lobber.R
 import com.github.reygnn.lobber.ssh.AabEntry
 import com.github.reygnn.lobber.ssh.LogLine
 import java.time.Instant
@@ -63,10 +65,10 @@ fun SettingsScreen(
 
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text("Settings") },
+            title = { Text(stringResource(R.string.settings_title)) },
             navigationIcon = {
                 if (onBack != null) {
-                    TextButton(onClick = onBack) { Text("Zurück") }
+                    TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
                 }
             },
         )
@@ -81,28 +83,28 @@ fun SettingsScreen(
         ) {
             OutlinedTextField(
                 value = s.host, onValueChange = viewModel::onHost,
-                label = { Text("Host") }, singleLine = true,
+                label = { Text(stringResource(R.string.field_host)) }, singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = s.port, onValueChange = viewModel::onPort,
-                label = { Text("Port") }, singleLine = true,
+                label = { Text(stringResource(R.string.field_port)) }, singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = s.username, onValueChange = viewModel::onUsername,
-                label = { Text("User") }, singleLine = true,
+                label = { Text(stringResource(R.string.field_user)) }, singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = s.workingDir, onValueChange = viewModel::onWorkingDir,
-                label = { Text("Working dir (mit install-aab.sh)") }, singleLine = true,
+                label = { Text(stringResource(R.string.field_working_dir)) }, singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = s.privateKeyPem, onValueChange = viewModel::onPrivateKey,
-                label = { Text("id_ed25519 (PEM, kompletter Block)") },
+                label = { Text(stringResource(R.string.field_private_key)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp),
@@ -117,7 +119,7 @@ fun SettingsScreen(
                 enabled = !s.saving,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (s.saving) "Speichere…" else "Speichern")
+                Text(stringResource(if (s.saving) R.string.saving else R.string.save))
             }
         }
     }
@@ -137,13 +139,13 @@ fun InstallerScreen(
 
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text("Lobber ${BuildConfig.VERSION_NAME}") },
+            title = { Text(stringResource(R.string.installer_title, BuildConfig.VERSION_NAME)) },
             actions = {
                 IconButton(onClick = viewModel::loadAabs, enabled = !s.loading && s.installing == null) {
-                    Icon(Icons.Default.Refresh, contentDescription = "AAB-Liste neu laden")
+                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh_aabs))
                 }
                 IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Default.Settings, contentDescription = "Einstellungen öffnen")
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.open_settings))
                 }
             },
         )
@@ -179,7 +181,7 @@ private fun AabList(
             Spacer(Modifier.height(8.dp))
         }
         if (aabs.isEmpty() && error == null) {
-            Text("Keine .aab im Working-Dir gefunden.")
+            Text(stringResource(R.string.no_aabs_found))
             return@Column
         }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -197,7 +199,7 @@ private fun AabList(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        Button(onClick = { onInstall(entry.name) }) { Text("Install") }
+                        Button(onClick = { onInstall(entry.name) }) { Text(stringResource(R.string.install)) }
                     }
                 }
             }
@@ -215,8 +217,9 @@ private fun InstallProgress(aab: String, log: List<LogLine>) {
         if (log.isNotEmpty()) listState.animateScrollToItem(log.lastIndex)
     }
 
+    val unknownLabel = stringResource(R.string.exit_unknown)
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Installing $aab", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.installing_aab, aab), style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         LazyColumn(state = listState, modifier = Modifier.weight(1f)) {
             items(log) { line ->
@@ -224,7 +227,7 @@ private fun InstallProgress(aab: String, log: List<LogLine>) {
                     is LogLine.Stdout    -> line.text to Color.Unspecified
                     is LogLine.Stderr    -> line.text to MaterialTheme.colorScheme.error
                     is LogLine.ExitCode  -> when (line.code) {
-                        null -> "─── exit unbekannt ───" to MaterialTheme.colorScheme.onSurfaceVariant
+                        null -> "─── exit $unknownLabel ───" to MaterialTheme.colorScheme.onSurfaceVariant
                         0    -> "─── exit 0 ───" to MaterialTheme.colorScheme.primary
                         else -> "─── exit ${line.code} ───" to MaterialTheme.colorScheme.error
                     }
@@ -256,7 +259,7 @@ fun OnboardingScreen(
     val running = s.step != OnboardingStep.Idle && s.step != OnboardingStep.Done
 
     Scaffold(topBar = {
-        TopAppBar(title = { Text("Erst-Setup") })
+        TopAppBar(title = { Text(stringResource(R.string.onboarding_title)) })
     }) { padding ->
         Column(
             modifier = Modifier
@@ -267,37 +270,36 @@ fun OnboardingScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                "Lobber erzeugt einen Schlüssel auf dem Phone und legt den Pubkey " +
-                    "auf dem Build-Host ab. Dafür brauchst du einmalig User & Passwort.",
+                stringResource(R.string.onboarding_intro),
                 style = MaterialTheme.typography.bodyMedium,
             )
 
             OutlinedTextField(
                 value = s.host, onValueChange = viewModel::onHost,
-                label = { Text("Host") }, singleLine = true, enabled = !running,
+                label = { Text(stringResource(R.string.field_host)) }, singleLine = true, enabled = !running,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = s.port, onValueChange = viewModel::onPort,
-                label = { Text("Port") }, singleLine = true, enabled = !running,
+                label = { Text(stringResource(R.string.field_port)) }, singleLine = true, enabled = !running,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = s.username, onValueChange = viewModel::onUsername,
-                label = { Text("User") }, singleLine = true, enabled = !running,
+                label = { Text(stringResource(R.string.field_user)) }, singleLine = true, enabled = !running,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = s.password, onValueChange = viewModel::onPassword,
-                label = { Text("Passwort (nur einmalig)") }, singleLine = true, enabled = !running,
+                label = { Text(stringResource(R.string.field_password_once)) }, singleLine = true, enabled = !running,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = s.workingDir, onValueChange = viewModel::onWorkingDir,
-                label = { Text("Working dir (mit install-aab.sh)") }, singleLine = true, enabled = !running,
+                label = { Text(stringResource(R.string.field_working_dir)) }, singleLine = true, enabled = !running,
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -321,7 +323,7 @@ fun OnboardingScreen(
                 enabled = !running,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (running) "Läuft …" else "Auto-Setup starten")
+                Text(stringResource(if (running) R.string.onboarding_running else R.string.onboarding_start))
             }
 
             TextButton(
@@ -329,17 +331,18 @@ fun OnboardingScreen(
                 enabled = !running,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Ich habe schon einen Schlüssel")
+                Text(stringResource(R.string.onboarding_have_key))
             }
         }
     }
 }
 
+@Composable
 private fun stepLabel(step: OnboardingStep): String = when (step) {
     OnboardingStep.Idle           -> ""
-    OnboardingStep.GeneratingKey  -> "Erzeuge Ed25519-Schlüssel …"
-    OnboardingStep.PushingKey     -> "Lege Pubkey auf dem Build-Host ab …"
-    OnboardingStep.Verifying      -> "Verifiziere Pubkey-Login …"
-    OnboardingStep.Saving         -> "Speichere Konfiguration …"
-    OnboardingStep.Done           -> "Fertig"
+    OnboardingStep.GeneratingKey  -> stringResource(R.string.step_generating)
+    OnboardingStep.PushingKey     -> stringResource(R.string.step_pushing)
+    OnboardingStep.Verifying      -> stringResource(R.string.step_verifying)
+    OnboardingStep.Saving         -> stringResource(R.string.step_saving)
+    OnboardingStep.Done           -> stringResource(R.string.step_done)
 }
