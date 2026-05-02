@@ -1,12 +1,15 @@
 package com.github.reygnn.lobber.ssh
 
+import com.hierynomus.sshj.userauth.keyprovider.OpenSSHKeyV1KeyFile
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters
 import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil
 import org.bouncycastle.util.encoders.Base64
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.StringReader
 
 class SshKeygenTest {
 
@@ -48,6 +51,18 @@ class SshKeygenTest {
         // OpenSSH wire format: 4-byte length + "ssh-ed25519" + 4-byte length + 32 raw pubkey bytes.
         val rawPub = pubBlob.copyOfRange(pubBlob.size - 32, pubBlob.size)
         assertTrue(expectedPub.contentEquals(rawPub))
+    }
+
+    @Test
+    fun `private key roundtrips through sshj's OpenSSHKeyV1 parser`() {
+        val pair = SshKeygen.generateEd25519()
+        val keyFile = OpenSSHKeyV1KeyFile()
+        keyFile.init(StringReader(pair.privateKeyPem))
+        val priv = keyFile.private
+        val pub = keyFile.public
+        assertNotNull("sshj must produce a private key", priv)
+        assertNotNull("sshj must produce a public key", pub)
+        assertEquals("Ed25519", pub.algorithm)
     }
 
     @Test

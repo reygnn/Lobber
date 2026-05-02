@@ -1,5 +1,6 @@
 package com.github.reygnn.lobber.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.reygnn.lobber.data.SettingsStore
@@ -93,10 +94,23 @@ class OnboardingViewModel(
             }.onSuccess {
                 _state.update { it.copy(step = OnboardingStep.Done, password = "") }
             }.onFailure { e ->
-                _state.update { it.copy(step = OnboardingStep.Idle, error = e.message ?: "Fehler") }
+                Log.e("Lobber/Onboarding", "Onboarding failed at ${_state.value.step}", e)
+                _state.update {
+                    it.copy(step = OnboardingStep.Idle, error = formatCauseChain(e))
+                }
             }
         }
     }
 
     fun consumeDone() = _state.update { it.copy(step = OnboardingStep.Idle) }
+
+    private fun formatCauseChain(t: Throwable): String = buildString {
+        var current: Throwable? = t
+        val seen = HashSet<Throwable>()
+        while (current != null && seen.add(current)) {
+            if (isNotEmpty()) append("\n→ ")
+            append(current::class.simpleName).append(": ").append(current.message ?: "(keine Nachricht)")
+            current = current.cause
+        }
+    }
 }

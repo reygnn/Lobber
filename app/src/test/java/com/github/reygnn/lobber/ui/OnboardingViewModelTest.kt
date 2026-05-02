@@ -71,7 +71,7 @@ class OnboardingViewModelTest {
         vm.state.test {
             val final = expectMostRecentItem()
             assertEquals(OnboardingStep.Idle, final.step)
-            assertEquals("auth failed", final.error)
+            assertEquals("IOException: auth failed", final.error)
         }
     }
 
@@ -83,7 +83,25 @@ class OnboardingViewModelTest {
         vm.state.test {
             val final = expectMostRecentItem()
             assertEquals(OnboardingStep.Idle, final.step)
-            assertEquals("verification failed", final.error)
+            assertEquals("IOException: verification failed", final.error)
+        }
+    }
+
+    @Test
+    fun `error message includes cause chain`() = runTest(mainDispatcherRule.dispatcher) {
+        val root = IllegalStateException("Ed25519 not found")
+        val mid = java.security.GeneralSecurityException("KeyFactory failed", root)
+        coEvery { bootstrap.verifyPubkeyAuth(any()) } throws IOException("Read OpenSSH Version 1 Key failed", mid)
+        fillForm()
+        vm.start()
+        vm.state.test {
+            val final = expectMostRecentItem()
+            assertEquals(
+                "IOException: Read OpenSSH Version 1 Key failed\n" +
+                    "→ GeneralSecurityException: KeyFactory failed\n" +
+                    "→ IllegalStateException: Ed25519 not found",
+                final.error,
+            )
         }
     }
 

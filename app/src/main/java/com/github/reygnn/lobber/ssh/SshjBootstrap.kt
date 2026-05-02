@@ -46,8 +46,7 @@ class SshjBootstrap : SshBootstrap {
         ssh.addHostKeyVerifier(PromiscuousVerifier())
         ssh.connect(config.host, config.port)
         try {
-            val keys = ssh.loadKeys(config.privateKeyPem, null, null)
-            ssh.authPublickey(config.username, keys)
+            ssh.authPublickey(config.username, BcOpenSshKeyProvider(config.privateKeyPem))
         } finally {
             ssh.disconnect()
         }
