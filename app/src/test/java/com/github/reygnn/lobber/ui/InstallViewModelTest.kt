@@ -7,8 +7,10 @@ import com.github.reygnn.lobber.ssh.LogLine
 import com.github.reygnn.lobber.ssh.SshClient
 import com.github.reygnn.lobber.ssh.SshConfig
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -112,6 +114,28 @@ class InstallViewModelTest {
             assertEquals(LogLine.ExitCode(null), final.log.last())
             assertNull(final.lastExitCode)
         }
+    }
+
+    @Test
+    fun `loadAabs is a no-op while an install is running`() = runTest(mainDispatcherRule.dispatcher) {
+        // Hold the install flow open so we stay in `installing != null`.
+        val gate = MutableSharedFlow<LogLine>(replay = 1)
+        every { client.executeStreaming(any()) } returns gate
+        coEvery { client.listAabs() } returns listOf("a.aab", "b.aab")
+
+        vm.install("app-release.aab")
+        vm.state.test {
+            // Wait until we're actually in the installing state.
+            while (awaitItem().installing == null) { /* drain */ }
+
+            vm.loadAabs() // Should be ignored.
+
+            // Let the install finish.
+            gate.emit(LogLine.ExitCode(0))
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 0) { client.listAabs() }
     }
 
     @Test

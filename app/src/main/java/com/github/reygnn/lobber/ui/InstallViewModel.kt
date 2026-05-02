@@ -35,6 +35,7 @@ class InstallViewModel(
     val state: StateFlow<InstallUiState> = _state.asStateFlow()
 
     fun loadAabs() {
+        if (_state.value.installing != null) return
         viewModelScope.launch {
             val config = settings.config.first()
             if (config == null) {
