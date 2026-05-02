@@ -92,6 +92,25 @@ class InstallViewModelTest {
             assertNull(final.installing)
             assertEquals(3, final.log.size)
             assertEquals(LogLine.ExitCode(0), final.log.last())
+            assertEquals(0, final.lastExitCode)
+        }
+    }
+
+    @Test
+    fun `install with unknown exit propagates null code`() = runTest(mainDispatcherRule.dispatcher) {
+        every { client.executeStreaming(any()) } returns flowOf(
+            LogLine.Stdout("running"),
+            LogLine.ExitCode(null),
+        )
+
+        vm.state.test {
+            awaitItem()
+            vm.install("app-release.aab")
+
+            val final = expectMostRecentItem()
+            assertNull(final.installing)
+            assertEquals(LogLine.ExitCode(null), final.log.last())
+            assertNull(final.lastExitCode)
         }
     }
 

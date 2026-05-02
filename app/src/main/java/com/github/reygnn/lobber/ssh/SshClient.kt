@@ -14,7 +14,8 @@ data class SshConfig(
 sealed interface LogLine {
     data class Stdout(val text: String) : LogLine
     data class Stderr(val text: String) : LogLine
-    data class ExitCode(val code: Int) : LogLine
+    /** [code] ist `null`, wenn sshj keinen Exit-Status liefert ("unbekannt"). */
+    data class ExitCode(val code: Int?) : LogLine
 }
 
 interface SshClient {

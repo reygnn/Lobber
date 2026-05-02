@@ -202,11 +202,10 @@ private fun InstallProgress(aab: String, log: List<LogLine>) {
                 val (text, color) = when (line) {
                     is LogLine.Stdout    -> line.text to Color.Unspecified
                     is LogLine.Stderr    -> line.text to MaterialTheme.colorScheme.error
-                    is LogLine.ExitCode  -> {
-                        val ok = line.code == 0
-                        ("─── exit ${line.code} ───") to
-                            if (ok) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.error
+                    is LogLine.ExitCode  -> when (line.code) {
+                        null -> "─── exit unbekannt ───" to MaterialTheme.colorScheme.onSurfaceVariant
+                        0    -> "─── exit 0 ───" to MaterialTheme.colorScheme.primary
+                        else -> "─── exit ${line.code} ───" to MaterialTheme.colorScheme.error
                     }
                 }
                 Text(

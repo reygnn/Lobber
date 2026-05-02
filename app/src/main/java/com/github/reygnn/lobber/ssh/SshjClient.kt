@@ -78,7 +78,7 @@ class SshjClient(
                     stdoutJob.join()
                     stderrJob.join()
                     cmd.join()
-                    send(LogLine.ExitCode(cmd.exitStatus ?: -1))
+                    send(LogLine.ExitCode(cmd.exitStatus))
                 }
             }
         }
