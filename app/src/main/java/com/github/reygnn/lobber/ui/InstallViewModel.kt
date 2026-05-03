@@ -147,6 +147,21 @@ class InstallViewModel(
             }
     }
 
+    /**
+     * Liste leeren, sobald die App in den Hintergrund geht. Beim nächsten
+     * Foreground triggert `LifecycleResumeEffect` einen frischen `loadAabs()`,
+     * und bis dahin sieht die UI den Spinner statt veralteter Einträge.
+     *
+     * Während ein Install läuft (oder das Log noch sichtbar ist) wird nicht
+     * geleert — die Anzeige hängt an `installing`, nicht an `aabs`, aber wir
+     * wollen `hasLoadedOnce` nicht zurücksetzen, solange ein Install-Stream
+     * State trägt, der danach noch konsistent gerendert werden muss.
+     */
+    fun clearAabs() {
+        if (_state.value.installing != null) return
+        _state.update { it.copy(aabs = emptyList(), hasLoadedOnce = false) }
+    }
+
     /** Schließt die Install-Progress-View und kehrt zur AAB-Liste zurück. */
     fun dismissInstall() {
         _state.update {

@@ -254,6 +254,47 @@ class InstallViewModelTest {
     }
 
     @Test
+    fun `clearAabs empties the list and resets hasLoadedOnce so the spinner shows next time`() = runTest(mainDispatcherRule.dispatcher) {
+        val entries = listOf(AabEntry("a.aab", 1714680000))
+        coEvery { client.listAabs() } returns entries
+
+        vm.loadAabs()
+        vm.state.test {
+            // Wait until first load is in.
+            while (!awaitItem().hasLoadedOnce) { /* drain */ }
+
+            vm.clearAabs()
+            val cleared = expectMostRecentItem()
+            assertTrue(cleared.aabs.isEmpty())
+            assertEquals(false, cleared.hasLoadedOnce)
+        }
+    }
+
+    @Test
+    fun `clearAabs is a no-op while an install is running`() = runTest(mainDispatcherRule.dispatcher) {
+        // Hold the install flow open so we stay in `installing != null`.
+        val gate = MutableSharedFlow<LogLine>(replay = 1)
+        every { client.executeStreaming(any()) } returns gate
+        coEvery { client.listAabs() } returns listOf(AabEntry("a.aab", 1714680000))
+
+        vm.loadAabs()
+        vm.install("app-release.aab")
+        vm.state.test {
+            // Wait until we're actually in the installing state with the list populated.
+            var s = awaitItem()
+            while (s.installing == null) s = awaitItem()
+            assertEquals(listOf(AabEntry("a.aab", 1714680000)), s.aabs)
+            assertEquals(true, s.hasLoadedOnce)
+
+            vm.clearAabs() // Should be ignored — verified by absence of new emissions.
+            expectNoEvents()
+
+            gate.emit(LogLine.ExitCode(0))
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `install propagates flow errors into state`() = runTest(mainDispatcherRule.dispatcher) {
         every { client.executeStreaming(any()) } returns flow { throw IOException("ssh closed") }
 
