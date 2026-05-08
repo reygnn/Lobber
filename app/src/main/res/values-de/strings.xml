@@ -20,6 +20,11 @@
     <string name="self_install_body">%1$s sieht nach einem Lobber-Build aus. Beim Installieren wird der laufende Lobber-Prozess mitten im Stream gekillt — du siehst den Install-Log nicht zu Ende. Trotzdem fortfahren?</string>
     <string name="self_install_continue">Fortfahren</string>
 
+    <!-- ADB-not-ready gate -->
+    <string name="adb_not_ready_title">ADB nicht aktiv</string>
+    <string name="adb_not_ready_body">Aktiviere USB- oder WLAN-Debugging in den Entwickleroptionen des Geräts. Ohne ADB kann der Build-Host nicht auf das Phone pushen.</string>
+    <string name="adb_not_ready_open">Entwickleroptionen öffnen</string>
+
     <!-- ViewModel-emitted errors -->
     <string name="error_fill_all_fields">Alle Felder ausfüllen</string>
     <string name="error_unknown">Unbekannter Fehler</string>

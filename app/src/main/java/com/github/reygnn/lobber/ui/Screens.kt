@@ -1,5 +1,9 @@
 package com.github.reygnn.lobber.ui
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,10 +43,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -142,6 +150,9 @@ fun InstallerScreen(
     onOpenSettings: () -> Unit,
 ) {
     val s by viewModel.state.collectAsStateWithLifecycle()
+    val adbStatus by adbStatusState()
+    val context = LocalContext.current
+    var adbBlockedAab by remember { mutableStateOf<String?>(null) }
 
     // Auf jedem ON_RESUME (App-Start, Rückkehr aus dem Hintergrund) AAB-Liste
     // refreshen, damit ein frisch gebauter AAB ohne manuellen Refresh-Tap
@@ -185,7 +196,10 @@ fun InstallerScreen(
                 else -> AabList(
                     aabs = s.aabs,
                     error = s.error,
-                    onInstall = viewModel::install,
+                    onInstall = { aab ->
+                        if (adbStatus.anyEnabled) viewModel.install(aab)
+                        else adbBlockedAab = aab
+                    },
                 )
             }
         }
@@ -208,6 +222,39 @@ fun InstallerScreen(
             },
         )
     }
+
+    if (adbBlockedAab != null) {
+        AlertDialog(
+            onDismissRequest = { adbBlockedAab = null },
+            title = { Text(stringResource(R.string.adb_not_ready_title)) },
+            text = { Text(stringResource(R.string.adb_not_ready_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    openDeveloperOptions(context)
+                    adbBlockedAab = null
+                }) {
+                    Text(stringResource(R.string.adb_not_ready_open))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { adbBlockedAab = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+}
+
+// Solange Entwickleroptionen nie freigeschaltet wurden (7× auf Build-Nummer),
+// existiert ACTION_APPLICATION_DEVELOPMENT_SETTINGS auf dem Gerät nicht. In dem
+// Fall auf die Geräteinfo-Seite ausweichen, wo der User den Schalter freischaltet.
+private fun openDeveloperOptions(context: Context) {
+    runCatching { context.startActivity(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)) }
+        .recoverCatching {
+            if (it is ActivityNotFoundException) {
+                context.startActivity(Intent(Settings.ACTION_DEVICE_INFO_SETTINGS))
+            } else throw it
+        }
 }
 
 private val AabDateFormatter: DateTimeFormatter =

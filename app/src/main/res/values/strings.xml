@@ -20,6 +20,11 @@
     <string name="self_install_body">%1$s looks like a Lobber build. Installing it will kill the running Lobber process mid-stream — you won\'t see the install log finish. Continue?</string>
     <string name="self_install_continue">Continue</string>
 
+    <!-- ADB-not-ready gate -->
+    <string name="adb_not_ready_title">ADB not active</string>
+    <string name="adb_not_ready_body">Enable USB or wireless debugging in the device\'s developer options. Without ADB the build host can\'t push to this phone.</string>
+    <string name="adb_not_ready_open">Open developer options</string>
+
     <!-- ViewModel-emitted errors -->
     <string name="error_fill_all_fields">Fill in all fields</string>
     <string name="error_unknown">Unknown error</string>
