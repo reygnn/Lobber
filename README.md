@@ -1,49 +1,49 @@
 # Lobber
 
-> *„lob a build at the server"* — eine kleine Android-App, die auf dem Phone
-> zeigt, welche AABs auf deinem Build-Host liegen, und sie per Knopfdruck
-> installiert.
+> *"lob a build at the server"* — a small Android app that shows which AABs
+> are sitting on your build host and installs them with a single tap.
 
 ---
 
-## Was ist Lobber?
+## What is Lobber?
 
-Lobber löst genau ein Problem: **du sitzt mit deinem Test-Phone irgendwo im
-Büro, und der frische AAB-Build liegt auf dem Build-Server.** Statt USB-Kabel,
-`adb`, `bundletool`, oder File-Transfer-Gefummel öffnest du Lobber, tippst die
-gewünschte `.aab` an, und das Phone führt remote ein Install-Skript auf dem
-Server aus, das die App via `adb install` zurück auf dasselbe Phone deployt.
+Lobber solves exactly one problem: **you're sitting somewhere in the office
+with your test phone, and the fresh AAB build is on the build server.**
+Instead of fiddling with USB cables, `adb`, `bundletool`, or file-transfer
+gymnastics, you open Lobber, tap the AAB you want, and the phone remotely
+runs an install script on the server that deploys the app via `adb install`
+back to the same phone.
 
-Das eigentliche Installieren erledigt ein Skript namens **`install-aab.sh`**,
-das auf dem Build-Host liegt — Lobber ruft es nur auf und streamt dessen
-Live-Output zurück ins UI. Dadurch kann das Skript machen, was bei dir Sinn
-ergibt (universelles APK aus dem AAB extrahieren, signieren, an `adb install`
-verfüttern, Versions-Logging, Slack-Notify, …) ohne dass die App davon
-irgendetwas wissen muss.
+The actual installation is done by a script called **`install-aab.sh`** that
+lives on the build host — Lobber only invokes it and streams its live output
+back to the UI. That means the script can do whatever makes sense for you
+(extract a universal APK from the AAB, sign it, feed it to `adb install`,
+log the version, send a Slack notification, …) without the app needing to
+know any of it.
 
-**Lobber ist explizit ein LAN-Tool für ein bekanntes Build-Host-Setup.** Es
-ist kein generischer SSH-Client, kein App-Store-Ersatz und nicht für den
-Einsatz über das offene Internet gedacht (siehe [Sicherheit](#sicherheit)).
+**Lobber is explicitly a LAN tool for a known build-host setup.** It is not
+a generic SSH client, not an app-store replacement, and not meant for use
+over the open internet (see [Security](#security)).
 
 ---
 
-## Wie benutze ich es? (First-Time-Setup)
+## How do I use it? (First-time setup)
 
-### 1. Server-Seite vorbereiten
+### 1. Prepare the server
 
-Auf dem Build-Host brauchst du:
+On the build host you need:
 
-- einen laufenden **SSH-Daemon**, erreichbar vom Phone aus (gleiches WLAN
-  reicht),
-- vorübergehend **`PasswordAuthentication yes`** in `sshd_config`, falls du
-  den Auto-Setup-Wizard nutzen willst (siehe Schritt 3) — kann nach
-  erfolgreichem Setup wieder ausgeschaltet werden,
-- ein **Working-Dir**, in dem die `.aab`-Dateien landen *und* in dem das
-  Skript `install-aab.sh` liegt — z. B. `/srv/builds`,
-- das Skript **`install-aab.sh`** ausführbar (`chmod +x`); es bekommt den
-  Dateinamen der AAB als ersten Parameter (`$1`).
+- a running **SSH daemon** reachable from the phone (the same Wi-Fi is
+  enough),
+- temporarily **`PasswordAuthentication yes`** in `sshd_config` if you want
+  to use the auto-setup wizard (see step 2) — you can switch it back off
+  once setup succeeds,
+- a **working dir** where the `.aab` files land *and* where `install-aab.sh`
+  lives — e.g. `/srv/builds`,
+- the **`install-aab.sh`** script marked executable (`chmod +x`); it
+  receives the AAB filename as its first argument (`$1`).
 
-Minimal-Beispiel `install-aab.sh` (anpassen, was du brauchst):
+Minimal example `install-aab.sh` (adapt to your needs):
 
 ```bash
 #!/usr/bin/env bash
@@ -58,88 +58,89 @@ bundletool install-apks --apks="$APKS"
 echo "OK: $AAB"
 ```
 
-Wichtig: Das Skript sieht das **angeschlossene Phone** vom Build-Server aus
-nur, wenn dort `adb` das Phone kennt — typischerweise über USB-Kabel zum
-Server, einen `adb`-WLAN-Pairing-Setup oder einen `adb`-over-TCP-Workflow.
-Lobber ist die *Bedien*-Brücke; die *Install*-Brücke baust du serverseitig.
+Important: the script will only see the **attached phone** from the build
+server if `adb` on the server knows about it — typically via a USB cable
+from server to phone, an `adb` Wi-Fi pairing setup, or an `adb`-over-TCP
+workflow. Lobber is the *control* bridge; the *install* bridge you build
+on the server side.
 
-### 2. App starten — Auto-Setup-Wizard (empfohlen)
+### 2. Launch the app — auto-setup wizard (recommended)
 
-Beim allerersten Start landest du im **Erst-Setup-Screen**. Der Wizard
-übernimmt Keypair-Generierung und Pubkey-Deployment für dich:
+The very first launch drops you into the **first-time setup screen**. The
+wizard handles keypair generation and public-key deployment for you:
 
-| Feld          | Beispiel                                              |
-|---------------|-------------------------------------------------------|
-| Host          | `buildserver.local` oder `192.168.1.42`               |
-| Port          | `22`                                                  |
-| User          | der SSH-User auf dem Build-Host (z. B. `ci`)          |
-| Passwort      | das SSH-Passwort des Users (wird nicht gespeichert)   |
-| Working dir   | das Verzeichnis mit den `.aab` und `install-aab.sh`   |
+| Field         | Example                                                |
+|---------------|--------------------------------------------------------|
+| Host          | `buildserver.local` or `192.168.1.42`                  |
+| Port          | `22`                                                   |
+| User          | the SSH user on the build host (e.g. `ci`)             |
+| Password      | the user's SSH password (not stored)                   |
+| Working dir   | the directory with the `.aab` files and `install-aab.sh` |
 
-**„Auto-Setup starten"** durchläuft dann:
+**"Start auto-setup"** then runs through:
 
-1. **Erzeuge Ed25519-Schlüssel** — direkt auf dem Phone, in `filesDir`.
-2. **Lege Pubkey auf dem Build-Host ab** — Passwort-Login, hängt die
-   `ssh-ed25519 …`-Zeile an `~/.ssh/authorized_keys`, setzt `chmod 700` auf
-   `~/.ssh` und `chmod 600` auf `authorized_keys`.
-3. **Verifiziere Pubkey-Login** — separater Connect mit dem neuen Key. Schlägt
-   das fehl, wird die Konfiguration nicht persistiert.
-4. **Speichere Konfiguration** — Privatkey als `id_ed25519` (Mode `0600`),
-   Pubkey als `id_ed25519.pub` in `filesDir`. Das Passwort verschwindet aus
-   dem Form-State.
+1. **Generate Ed25519 key** — directly on the phone, in `filesDir`.
+2. **Push public key to build host** — password login, appends the
+   `ssh-ed25519 …` line to `~/.ssh/authorized_keys`, sets `chmod 700` on
+   `~/.ssh` and `chmod 600` on `authorized_keys`.
+3. **Verify public-key login** — separate connect with the new key. If
+   that fails, the configuration is not persisted.
+4. **Save configuration** — private key as `id_ed25519` (mode `0600`),
+   public key as `id_ed25519.pub` in `filesDir`. The password disappears
+   from the form state.
 
-Danach kannst du `PasswordAuthentication no` wieder setzen — Lobber redet
-ab jetzt nur noch per Pubkey mit dem Server.
+After that you can put `PasswordAuthentication no` back — from now on
+Lobber talks to the server only via public-key auth.
 
-### 2b. Manueller Pfad — eigener Key
+### 2b. Manual path — bring your own key
 
-Falls du schon einen Schlüssel hast oder den Server keinen Passwort-Login
-zulässt, tippe im Wizard auf **„Ich habe schon einen Schlüssel"**. Du landest
-auf dem klassischen **Settings-Screen** mit Paste-Feld für den PEM-Block.
+If you already have a key, or the server doesn't allow password login,
+tap **"I already have a key"** in the wizard. You land on the classic
+**Settings screen** with a paste field for the PEM block.
 
-Schlüssel auf einem normalen Rechner (nicht auf dem Phone) erzeugen:
+Generate the key on a regular machine (not on the phone):
 
 ```bash
 ssh-keygen -t ed25519 -f lobber_key -N ""
 ```
 
-Pubkey auf den Server bringen:
+Push the public key to the server:
 
 ```bash
 ssh-copy-id -i lobber_key.pub ci@buildserver.local
 ```
 
-Dann den **kompletten Inhalt** von `lobber_key` (inkl. der
-`-----BEGIN OPENSSH PRIVATE KEY-----` und `-----END …-----` Zeilen) per Paste
-in das `id_ed25519`-Feld der Settings einfügen, restliche Felder ausfüllen,
-„Speichern".
+Then paste the **entire contents** of `lobber_key` (including the
+`-----BEGIN OPENSSH PRIVATE KEY-----` and `-----END …-----` lines) into
+the `id_ed25519` field in Settings, fill in the remaining fields, and tap
+"Save".
 
-### 3. Installieren
+### 3. Install
 
-Der Installer-Screen listet alle `.aab`-Dateien aus deinem Working-Dir.
+The installer screen lists every `.aab` file in your working dir.
 
-- **Tap auf eine `.aab`** startet den Install. Der Bildschirm wechselt zur
-  Live-Log-Ansicht.
-- **stdout** erscheint normal, **stderr** in der Theme-Error-Farbe, am Ende
-  eine Zeile `─── exit 0 ───` in Primary-Farbe oder `─── exit N ───` in
-  Error-Farbe je nach Skript-Returncode.
-- **Der farbige Punkt links neben dem Titel** zeigt den ADB-Status (Primary
-  = aktiv, Error = inaktiv) und ist tippbar — Tap springt direkt in die
-  Entwickleroptionen des Geräts, um USB-/WLAN-Debugging schnell
-  umzuschalten.
-- **`⟳`** in der Top-Bar lädt die AAB-Liste neu (z. B. nach einem frischen
-  Build).
-- **`⚙`** öffnet die Settings, falls du Host-Daten ändern willst.
+- **Tap an `.aab`** to start the install. The screen switches to the live
+  log view.
+- **stdout** appears normally, **stderr** in the theme's error color, and
+  at the end a line `─── exit 0 ───` in the primary color or
+  `─── exit N ───` in the error color depending on the script's return
+  code.
+- **The colored dot left of the title** shows ADB status (primary =
+  active, error = inactive) and is tappable — a tap jumps straight to the
+  device's developer options so you can flip USB or wireless debugging on
+  the fly.
+- **`⟳`** in the top bar reloads the AAB list (e.g. after a fresh build).
+- **`⚙`** opens Settings if you want to change host details.
 
-Damit ist der reguläre Workflow: neuer Build landet auf dem Server → Lobber
-öffnen → `⟳` → AAB tippen → fertig.
+That's the regular workflow: new build lands on the server → open Lobber
+→ `⟳` → tap an AAB → done.
 
 ---
 
-## Targeting
+## Target
 
-`minSdk = targetSdk = compileSdk = 36` — läuft ausschließlich auf **Android
-16**. Keine Compat-Shims, keine AppCompat-Themen, keine Material-2-Reste.
+`minSdk = targetSdk = compileSdk = 36` — runs exclusively on **Android
+16**. No compatibility shims, no AppCompat themes, no Material 2 leftovers.
 
 ---
 
@@ -148,120 +149,125 @@ Damit ist der reguläre Workflow: neuer Build landet auf dem Server → Lobber
 - Kotlin 2.2.21, Jetpack Compose, Material 3 + Dynamic Color (Material You),
   Navigation-Compose 2.9
 - AGP 8.13, JDK 17
-- DataStore Preferences 1.2 für Konfiguration
-- **sshj 0.40** + **BouncyCastle 1.79** für SSH; `slf4j-nop` als runtimeOnly
-- MVVM mit manueller DI (kein Hilt, kein Koin)
+- DataStore Preferences 1.2 for configuration
+- **sshj 0.40** + **BouncyCastle 1.79** for SSH; `slf4j-nop` as runtimeOnly
+- MVVM with manual DI (no Hilt, no Koin)
 - Tests: JUnit 4, **MockK**, kotlinx-coroutines-test, **Turbine**
 
 ---
 
 ## Build & Test
 
-Gradle ist über den Wrapper eingecheckt — keine lokale Gradle-Installation
-nötig.
+Gradle is checked in via the wrapper — no local Gradle installation
+required.
 
 ```bash
-./gradlew assembleDebug    # Debug-APK bauen
-./gradlew test             # Unit-Tests (keine Instrumentation nötig)
+./gradlew assembleDebug    # build debug APK
+./gradlew test             # unit tests (no instrumentation needed)
 ```
 
 ---
 
-## Architektur
+## Architecture
 
 ```
 com.github.reygnn.lobber
-├── LobberApplication.kt        Singleton-Holder für SettingsStore
-├── MainActivity.kt             Compose-Entry, NavHost (loading|onboarding|settings|installer)
+├── LobberApplication.kt        singleton holder for SettingsStore
+├── MainActivity.kt             Compose entry, NavHost (loading|onboarding|settings|installer)
 ├── ssh/
-│   ├── SshClient.kt            Interface + LogLine + SshConfig + shellQuote
-│   ├── SshjClient.kt           sshj-Impl, eine Connection pro Operation
-│   ├── SshKeygen.kt            Ed25519-Generator + OpenSSH-PEM-Serialisierung
-│   ├── SshBootstrap.kt         Interface: pushPublicKey, verifyPubkeyAuth
-│   └── SshjBootstrap.kt        sshj-Impl: einmaliger Passwort-Connect fürs Setup
+│   ├── SshClient.kt            interface + LogLine + SshConfig + shellQuote
+│   ├── SshjClient.kt           sshj impl, one connection per operation
+│   ├── SshKeygen.kt            Ed25519 generator + OpenSSH PEM serialization
+│   ├── SshBootstrap.kt         interface: pushPublicKey, verifyPubkeyAuth
+│   └── SshjBootstrap.kt        sshj impl: one-shot password connect for setup
 ├── data/
 │   └── SettingsStore.kt        DataStore<Preferences> + id_ed25519/.pub in filesDir
 └── ui/
     ├── InstallViewModel.kt     StateFlow<InstallUiState>, listAabs/install
-    ├── SettingsViewModel.kt    StateFlow<SettingsUiState>, Form + Validierung
-    ├── OnboardingViewModel.kt  StateFlow<OnboardingUiState>, Step-Maschine fürs Erst-Setup
+    ├── SettingsViewModel.kt    StateFlow<SettingsUiState>, form + validation
+    ├── OnboardingViewModel.kt  StateFlow<OnboardingUiState>, step machine for first-time setup
     └── Screens.kt              Settings/Installer/Onboarding + AabList/InstallProgress
 ```
 
-**Wichtige Design-Entscheidungen** stehen ausführlich in
-[`CLAUDE.md`](CLAUDE.md) — kurz:
+**Key design decisions** are spelled out in detail in
+[`CLAUDE.md`](CLAUDE.md) — in short:
 
-- `SshClient` ist immer ein Interface, `InstallViewModel` bekommt eine
-  `(SshConfig) -> SshClient` Factory → MockK-freundlich.
-- **Eine SSH-Connection pro Operation.** Kein Pool, keine Long-Lived-Session.
-- Manuelle DI über `LobberApplication` + `LobberViewModelFactory`.
-- Private Key liegt als Datei in `filesDir/id_ed25519` mit Mode `0600`.
+- `SshClient` is always an interface, `InstallViewModel` receives a
+  `(SshConfig) -> SshClient` factory → MockK-friendly.
+- **One SSH connection per operation.** No pool, no long-lived session.
+- Manual DI via `LobberApplication` + `LobberViewModelFactory`.
+- The private key lives as a file in `filesDir/id_ed25519` with mode
+  `0600`.
 
 ---
 
-## Sicherheit
+## Security
 
-**Bewusst minimal, weil Tool für ein bekanntes LAN-Setup:**
+**Intentionally minimal, because this is a tool for a known LAN setup:**
 
-- Private Key liegt in `context.filesDir/id_ed25519`, durch die Android-App-
-  Sandbox isoliert. Mode `0600` als defence-in-depth.
-- Android 16 hat default Geräte-Verschlüsselung. Für höheren Bedarf zusätzlich
-  `androidx.biometric` vor App-Start oder `EncryptedFile`.
-- **Host-Key-Verifikation: aktuell `PromiscuousVerifier()`** mit `TODO`-Marker
-  in `ssh/SshjClient.kt`. Akzeptabel für ein vertrauenswürdiges Build-LAN,
-  **nicht safe für Internet-Hops**. Vor breiterer Distribution durch einen
-  TOFU-Fingerprint-Flow ersetzen (Slot in `SshConfig.knownHostFingerprint` ist
-  schon vorhanden).
+- The private key lives in `context.filesDir/id_ed25519`, isolated by the
+  Android app sandbox. Mode `0600` as defense in depth.
+- Android 16 ships device encryption by default. If you need more, add
+  `androidx.biometric` before app start, or use `EncryptedFile`.
+- **Host-key verification: currently `PromiscuousVerifier()`** with a
+  `TODO` marker in `ssh/SshjClient.kt`. Acceptable for a trusted build
+  LAN, **not safe over the open internet**. Replace with a TOFU
+  fingerprint flow before wider distribution (the slot in
+  `SshConfig.knownHostFingerprint` is already there).
 
 ---
 
 ## Tests
 
-`app/src/test/java/.../InstallViewModelTest.kt` folgt
+`app/src/test/java/.../InstallViewModelTest.kt` follows
 [`TESTING_CONVENTIONS.kt`](app/src/test/java/com/github/reygnn/lobber/TESTING_CONVENTIONS.kt):
 
-- Single Dispatcher via `MainDispatcherRule` (kein eigenes `TestScope`/
+- Single dispatcher via `MainDispatcherRule` (no separate `TestScope` /
   `StandardTestDispatcher`).
-- MockK für Mocks, Turbine für Flow-Assertions, `expectMostRecentItem()` gegen
-  StateFlow-Konflation.
-- Jeden Flow stubben, den die VM bei Konstruktion liest — sonst fallen alle
-  VM-Tests gleichzeitig auf MockK-Fehler.
+- MockK for mocks, Turbine for flow assertions,
+  `expectMostRecentItem()` against StateFlow conflation.
+- Stub every flow the VM reads at construction — otherwise all VM tests
+  fail simultaneously with a MockK error.
 
 ---
 
-## Dokumentation
+## Documentation
 
-- [`CLAUDE.md`](CLAUDE.md) — Architekturregeln, Test-Konventionen, Git-Workflow
-  (auch für menschliche Mitwirkende lesenswert, nicht nur für Claude Code).
-- [`WHY_CLAUDE.md`](WHY_CLAUDE.md) — Hintergrund zu den Konventionen.
-
----
-
-## Bewusst weggelassen (potenzielle Erweiterungen)
-
-- **Build remote triggern** — wäre eine zweite Funktion, aktuell out-of-scope.
-- **Server-Profile** (dev/staging) — derzeit ein Profil, bei Bedarf Liste in
-  DataStore.
-- **Biometric Lock** — `androidx.biometric` einbauen wenn nötig.
-- **File-Picker für Key-Import** — aktuell nur Paste; mit
-  `ActivityResultContracts.OpenDocument` ergänzbar.
-- **Weitere Locales** — Lobber spricht aktuell Englisch (Default) und
-  Deutsch (`res/values/strings.xml` + `res/values-de/strings.xml`). Weitere
-  Sprachen via `res/values-<locale>/strings.xml` ergänzbar; fehlende Keys
-  fallen auf Englisch zurück.
+- [`CLAUDE.md`](CLAUDE.md) — architecture rules, test conventions, Git
+  workflow (worth reading for human contributors too, not just Claude
+  Code).
+- [`WHY_CLAUDE.md`](WHY_CLAUDE.md) — background on the conventions.
 
 ---
 
-## Versionierung
+## Intentionally left out (potential extensions)
 
-`versionName` in `app/build.gradle.kts` matcht das GitHub-Release-Tag exakt.
+- **Remote build trigger** — would be a second function, currently out
+  of scope.
+- **Server profiles** (dev/staging) — one profile for now; if needed, a
+  list in DataStore.
+- **Biometric lock** — wire up `androidx.biometric` if needed.
+- **File picker for key import** — paste only right now; addable via
+  `ActivityResultContracts.OpenDocument`.
+- **More locales** — Lobber currently speaks English (default) and
+  German (`res/values/strings.xml` + `res/values-de/strings.xml`).
+  Additional languages can be added via
+  `res/values-<locale>/strings.xml`; missing keys fall back to English.
 
 ---
 
-## Namensgebung umbenennen
+## Versioning
 
-Falls dir „Lobber" nicht gefällt: alles unter `com.github.reygnn.lobber` per
-Find/Replace umbenennen, plus `rootProject.name` in `settings.gradle.kts`
-und `<string name="app_name">` in `res/values/strings.xml`. Der TopAppBar-
-Titel kommt aus `installer_title` in derselben Datei (formatiert mit der
-Versionsnummer aus `BuildConfig.VERSION_NAME`).
+`versionName` in `app/build.gradle.kts` matches the GitHub release tag
+exactly.
+
+---
+
+## Renaming
+
+If you don't like "Lobber": rename everything under
+`com.github.reygnn.lobber` with find/replace, plus `rootProject.name` in
+`settings.gradle.kts` and `<string name="app_name">` in
+`res/values/strings.xml`. The TopAppBar title comes from
+`installer_title` in the same file (formatted with the version from
+`BuildConfig.VERSION_NAME`).
