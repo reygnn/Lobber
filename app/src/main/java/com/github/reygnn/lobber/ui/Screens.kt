@@ -264,9 +264,9 @@ private val AabDateFormatter: DateTimeFormatter =
 private fun AdbStatusDot() {
     val status by adbStatusState()
     val color = if (status.anyEnabled) {
-        Color(0xFF34C759) // green
+        MaterialTheme.colorScheme.primary
     } else {
-        Color(0xFFFF3B30) // red
+        MaterialTheme.colorScheme.error
     }
     val label = stringResource(
         if (status.anyEnabled) R.string.adb_status_active else R.string.adb_status_inactive

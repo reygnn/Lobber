@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      Light variant. Splash window paints white outside the icon circle.
-      The icon itself (white L on indigo) comes from @mipmap/ic_launcher and
-      stays consistent across light and dark.
+      Light variant. The DeviceDefault parent maps to Material 3 on Android
+      12+ devices, which is the only world Lobber runs in (min/target SDK 36).
+      The splash background uses the system's dynamic Material You neutral
+      palette so the pre-Compose window matches whatever wallpaper-derived
+      surface the rest of the app renders in.
     -->
-    <style name="Theme.Lobber" parent="@android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:windowSplashScreenBackground">#FFFFFFFF</item>
+    <style name="Theme.Lobber" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:windowSplashScreenBackground">@android:color/system_neutral1_50</item>
     </style>
 </resources>
