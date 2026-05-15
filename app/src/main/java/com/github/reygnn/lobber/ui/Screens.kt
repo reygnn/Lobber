@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -167,8 +166,7 @@ fun InstallerScreen(
         TopAppBar(
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    AdbStatusDot()
-                    Spacer(Modifier.width(8.dp))
+                    AdbStatusDot(onClick = { openDeveloperOptions(context) })
                     Text(stringResource(R.string.installer_title, BuildConfig.VERSION_NAME))
                 }
             },
@@ -261,7 +259,7 @@ private val AabDateFormatter: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
 @Composable
-private fun AdbStatusDot() {
+private fun AdbStatusDot(onClick: () -> Unit) {
     val status by adbStatusState()
     val color = if (status.anyEnabled) {
         MaterialTheme.colorScheme.primary
@@ -271,12 +269,19 @@ private fun AdbStatusDot() {
     val label = stringResource(
         if (status.anyEnabled) R.string.adb_status_active else R.string.adb_status_inactive
     )
-    Box(
-        modifier = Modifier
-            .size(10.dp)
-            .background(color, CircleShape)
-            .semantics { contentDescription = label },
-    )
+    // IconButton gives a Material-spec touch target (≥48dp) around the
+    // visually small 10dp dot, plus the standard ripple. Tap = jump to the
+    // device's developer options.
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.semantics { contentDescription = label },
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .background(color, CircleShape),
+        )
+    }
 }
 
 @Composable
