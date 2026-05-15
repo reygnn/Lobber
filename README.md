@@ -120,9 +120,13 @@ Der Installer-Screen listet alle `.aab`-Dateien aus deinem Working-Dir.
 
 - **Tap auf eine `.aab`** startet den Install. Der Bildschirm wechselt zur
   Live-Log-Ansicht.
-- **stdout** erscheint normal, **stderr** rot, am Ende eine Zeile
-  `─── exit 0 ───` (grün/primary) oder `─── exit N ───` (rot) je nach
-  Skript-Returncode.
+- **stdout** erscheint normal, **stderr** in der Theme-Error-Farbe, am Ende
+  eine Zeile `─── exit 0 ───` in Primary-Farbe oder `─── exit N ───` in
+  Error-Farbe je nach Skript-Returncode.
+- **Der farbige Punkt links neben dem Titel** zeigt den ADB-Status (Primary
+  = aktiv, Error = inaktiv) und ist tippbar — Tap springt direkt in die
+  Entwickleroptionen des Geräts, um USB-/WLAN-Debugging schnell
+  umzuschalten.
 - **`⟳`** in der Top-Bar lädt die AAB-Liste neu (z. B. nach einem frischen
   Build).
 - **`⚙`** öffnet die Settings, falls du Host-Daten ändern willst.
@@ -141,7 +145,8 @@ Damit ist der reguläre Workflow: neuer Build landet auf dem Server → Lobber
 
 ## Stack
 
-- Kotlin 2.2.21, Jetpack Compose, Material 3, Navigation-Compose 2.9
+- Kotlin 2.2.21, Jetpack Compose, Material 3 + Dynamic Color (Material You),
+  Navigation-Compose 2.9
 - AGP 8.13, JDK 17
 - DataStore Preferences 1.2 für Konfiguration
 - **sshj 0.40** + **BouncyCastle 1.79** für SSH; `slf4j-nop` als runtimeOnly
@@ -196,7 +201,7 @@ com.github.reygnn.lobber
 
 ## Sicherheit
 
-**Stand v0.1 — bewusst minimal, weil Tool für ein bekanntes LAN-Setup:**
+**Bewusst minimal, weil Tool für ein bekanntes LAN-Setup:**
 
 - Private Key liegt in `context.filesDir/id_ed25519`, durch die Android-App-
   Sandbox isoliert. Mode `0600` als defence-in-depth.
@@ -240,9 +245,10 @@ com.github.reygnn.lobber
 - **Biometric Lock** — `androidx.biometric` einbauen wenn nötig.
 - **File-Picker für Key-Import** — aktuell nur Paste; mit
   `ActivityResultContracts.OpenDocument` ergänzbar.
-- **Mehrere Locales** — UI-Strings sind hardcoded auf Deutsch in
-  `ui/Screens.kt`. Bei Bedarf erst nach `res/values/strings.xml` extrahieren,
-  dann `values-<locale>` ergänzen.
+- **Weitere Locales** — Lobber spricht aktuell Englisch (Default) und
+  Deutsch (`res/values/strings.xml` + `res/values-de/strings.xml`). Weitere
+  Sprachen via `res/values-<locale>/strings.xml` ergänzbar; fehlende Keys
+  fallen auf Englisch zurück.
 
 ---
 
@@ -255,6 +261,7 @@ com.github.reygnn.lobber
 ## Namensgebung umbenennen
 
 Falls dir „Lobber" nicht gefällt: alles unter `com.github.reygnn.lobber` per
-Find/Replace umbenennen, plus `rootProject.name` in `settings.gradle.kts`.
-Es gibt keine `strings.xml` mit `app_name` — der Titel steht inline in
-`ui/Screens.kt` (`Text("Lobber")`).
+Find/Replace umbenennen, plus `rootProject.name` in `settings.gradle.kts`
+und `<string name="app_name">` in `res/values/strings.xml`. Der TopAppBar-
+Titel kommt aus `installer_title` in derselben Datei (formatiert mit der
+Versionsnummer aus `BuildConfig.VERSION_NAME`).
